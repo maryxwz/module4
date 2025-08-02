@@ -1,0 +1,1 @@
+from comments.models.comment import Comment as Comment
