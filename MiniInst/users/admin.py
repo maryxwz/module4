@@ -1,5 +1,5 @@
 from django.contrib import admin
-from users.models import CustomUser
+from users.models import CustomUser, Follow
 
 
 @admin.register(CustomUser)
@@ -34,4 +34,31 @@ class CustomUserAdmin(admin.ModelAdmin):
         'id',
         "username",
         "email",
+    )
+
+
+@admin.register(Follow)
+class FollowAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "follower",
+        "following",
+        "created_at",
+    )
+    list_display_links = (
+        "id",
+        "follower",
+        "following",
+    )
+    list_filter = (
+        "id",
+        "follower",
+        "following",
+        "created_at",
+    )
+    search_fields = (
+        "id",
+        "follower",
+        "following",
+        "created_at",
     )
