@@ -1,0 +1,1 @@
+from stories.models.story import Story as Story
