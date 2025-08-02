@@ -5,7 +5,7 @@ class Post(models.Model):
     author = models.ForeignKey(
         to="users.CustomUser",
         on_delete=models.CASCADE,
-        related_name='author',
+        related_name='posts',
     )
     image = models.ImageField(upload_to='posts/')
     caption = models.TextField(blank=True)
