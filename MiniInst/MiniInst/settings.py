@@ -46,6 +46,8 @@ INSTALLED_APPS = [
     'direct.apps.DirectConfig',
     'recommendations.apps.RecommendationsConfig',
     'search.apps.SearchConfig',
+    # 3rd party
+    'channels',
 ]
 
 MIDDLEWARE = [
@@ -76,6 +78,16 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'MiniInst.wsgi.application'
+ASGI_APPLICATION = 'MiniInst.asgi.application'
+
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            "hosts": [("localhost", 6379)],
+        },
+    },
+}
 
 
 # Database

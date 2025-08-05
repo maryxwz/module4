@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="max-w-lg mx-auto mt-8 flex flex-col h-screen">
+  <h2 class="text-xl font-bold mb-4">Чат з {{ other.username }}</h2>
+  <div id="chat-window" class="flex-1 overflow-auto space-y-2 p-4 border rounded">
+    {% for msg in messages %}
+    <div class="flex {{ msg.sender == request.user|yesno:'justify-end,justify-start' }}">
+      <div class="bg-blue-500 text-white p-2 rounded-lg max-w-xs">
+        {{ msg.message }}
+        <div class="text-xs text-gray-200 mt-1">{{ msg.created_at|time:"H:i" }}</div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  <div class="mt-4 flex space-x-2">
+    <input id="msg-input" type="text" placeholder="Написати повідомлення..."
+           class="flex-1 border rounded p-2 focus:outline-none focus:ring">
+    <button id="send-btn" class="bg-blue-600 text-white px-4 py-2 rounded">Відправити</button>
+  </div>
+</div>
+
+<script>
+  (function() {
+    const directId = "{{ direct.id }}";
+    const userId = "{{ request.user.id }}";
+    const ws = new WebSocket(`ws://${window.location.host}/ws/chat/${directId}/`);
+
+    ws.onmessage = e => {
+      const data = JSON.parse(e.data);
+      const container = document.getElementById('chat-window');
+      const side = data.sender_id == userId ? 'justify-end' : 'justify-start';
+      const msgEl = document.createElement('div');
+      msgEl.classList.add('flex', side);
+      msgEl.innerHTML = `
+        <div class="bg-blue-500 text-white p-2 rounded-lg max-w-xs">
+          ${data.message}
+          <div class="text-xs text-gray-200 mt-1">${new Date().toLocaleTimeString()}</div>
+        </div>`;
+      container.appendChild(msgEl);
+      container.scrollTop = container.scrollHeight;
+    };
+
+    document.getElementById('send-btn').onclick = () => {
+      const input = document.getElementById('msg-input');
+      if (!input.value.trim()) return;
+      ws.send(JSON.stringify({
+        'message': input.value,
+        'sender_id': userId
+      }));
+      input.value = '';
+    };
+  })();
+</script>
