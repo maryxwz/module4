@@ -7,7 +7,7 @@ class UserReportAdmin(admin.ModelAdmin):
     list_display = (
         "id",
         "author",
-        "description",
+        "is_archived",
         "created_at",
     )
     list_display_links = (
