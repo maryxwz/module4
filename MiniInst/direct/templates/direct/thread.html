@@ -1,53 +1,217 @@
-{% extends 'base.html' %}
-{% block content %}
-<div class="max-w-lg mx-auto mt-8 flex flex-col h-screen">
-  <h2 class="text-xl font-bold mb-4">Чат з {{ other.username }}</h2>
-  <div id="chat-window" class="flex-1 overflow-auto space-y-2 p-4 border rounded">
-    {% for msg in messages %}
-    <div class="flex {{ msg.sender == request.user|yesno:'justify-end,justify-start' }}">
-      <div class="bg-blue-500 text-white p-2 rounded-lg max-w-xs">
-        {{ msg.message }}
-        <div class="text-xs text-gray-200 mt-1">{{ msg.created_at|time:"H:i" }}</div>
-      </div>
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Чат — {{ other.username }}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+    #chat-window::-webkit-scrollbar { display: none; }
+    #chat-window { -ms-overflow-style: none; scrollbar-width: none; }
+
+    .msg-appear { animation: appear .12s ease-out; }
+    @keyframes appear { from { opacity: 0; transform: translateY(6px);} to { opacity:1; transform:none;} }
+
+    .bubble,
+    #chat-window .max-w-xs {
+      display: inline-block !important;       
+      width: auto !important;
+      max-width: min(70%, 680px) !important;  
+      padding: 0.1rem 1rem !important;     
+      line-height: 1.4 !important;
+      word-break: break-word !important;
+      vertical-align: bottom !important;
+      box-sizing: border-box !important;
+      border-radius: 0.9rem !important;
+    }
+
+    .bubble-incoming { background: #fff; border: 1px solid #e6e6e6; color: #111827; border-bottom-left-radius: 0.25rem; }
+    .bubble-outgoing { background: #0095f6; color: #fff; border-bottom-right-radius: 0.25rem; }
+
+    .msg-row { align-items: flex-end; }
+
+    .chat-input { height: 3rem; } 
+    .btn-send { height: 3rem; width: 3rem; min-width: 3rem; display: inline-flex; align-items: center; justify-content: center; }
+
+    body { background: linear-gradient(180deg,#fafafa 0%, #f3f4f6 100%); }
+  </style>
+</head>
+<body class="antialiased text-slate-800">
+
+  <div class="min-h-screen h-screen w-full flex items-stretch">
+
+    <div class="flex-1 flex flex-col">
+      <header class="flex items-center justify-between px-4 py-3 border-b bg-white">
+        <div class="flex items-center gap-3">
+          <a href="{% url 'direct:inbox' %}" class="md:hidden p-1 rounded hover:bg-gray-100" aria-label="Назад">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+            </svg>
+          </a>
+
+          <div class="h-10 w-10 rounded-full bg-gradient-to-tr from-pink-400 to-yellow-400 flex items-center justify-center text-white font-semibold">
+            {{ other.username|first|upper }}
+          </div>
+            <div class="font-semibold">{{ other.username }}</div>
+        </div>
+
+        <div style="width:36px; height:36px;"></div>
+      </header>
+
+      <main id="chat-window" class="flex-1 overflow-y-auto space-y-4 p-6 bg-[color:rgba(250,250,250,1)]">
+        {% for msg in messages %}
+          {% if msg.sender == request.user %}
+            <div class="flex justify-end msg-appear msg-row">
+              <div class="bubble bubble-outgoing">
+                <div class="text-sm break-words">{{ msg.message }}</div>
+                <div class="text-[11px] mt-1 opacity-80 text-right">{{ msg.created_at|time:"H:i" }}</div>
+              </div>
+            </div>
+          {% else %}
+            <div class="flex items-start gap-3 msg-appear msg-row">
+              <div class="flex-shrink-0 mt-1">
+                <div class="h-8 w-8 rounded-full bg-gray-300 flex items-center justify-center text-gray-700 font-medium">
+                  {{ msg.sender.username|first|upper }}
+                </div>
+              </div>
+              <div class="bubble bubble-incoming">
+                <div class="text-sm font-medium mb-1">{{ msg.sender.username }}</div>
+                <div class="text-sm break-words">{{ msg.message }}</div>
+                <div class="text-[11px] mt-1 text-gray-500">{{ msg.created_at|time:"H:i" }}</div>
+              </div>
+            </div>
+          {% endif %}
+        {% empty %}
+          <div class="text-center text-gray-500 mt-12">Немає повідомлень — почніть діалог</div>
+        {% endfor %}
+      </main>
+
+      <!-- footer (input) -->
+      <footer class="border-t bg-white px-4 py-3">
+        <div class="max-w-3xl mx-auto flex items-center gap-3">
+          <input id="msg-input" type="text" placeholder="Написати повідомлення..."
+                 class="flex-1 border rounded-full px-4 text-sm focus:outline-none focus:ring-2 focus:ring-sky-200 chat-input" />
+
+          <button id="send-btn" class="bg-[#0095f6] hover:bg-[#0084e6] text-white rounded-full btn-send" aria-label="Відправити">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" class="h-5 w-5">
+              <path fill="#ffffff" d="M568.4 37.7C578.2 34.2 589 36.7 596.4 44C603.8 51.3 606.2 62.2 602.7 72L424.7 568.9C419.7 582.8 406.6 592 391.9 592C377.7 592 364.9 583.4 359.6 570.3L295.4 412.3C290.9 401.3 292.9 388.7 300.6 379.7L395.1 267.3C400.2 261.2 399.8 252.3 394.2 246.7C388.6 241.1 379.6 240.7 373.6 245.8L261.2 340.1C252.1 347.7 239.6 349.7 228.6 345.3L70.1 280.8C57 275.5 48.4 262.7 48.4 248.5C48.4 233.8 57.6 220.7 71.5 215.7L568.4 37.7z"/></svg>
+          </button>
+        </div>
+      </footer>
     </div>
-    {% endfor %}
   </div>
-  <div class="mt-4 flex space-x-2">
-    <input id="msg-input" type="text" placeholder="Написати повідомлення..."
-           class="flex-1 border rounded p-2 focus:outline-none focus:ring">
-    <button id="send-btn" class="bg-blue-600 text-white px-4 py-2 rounded">Відправити</button>
-  </div>
-</div>
 
 <script>
-  (function() {
-    const directId = "{{ direct.id }}";
-    const userId = "{{ request.user.id }}";
-    const ws = new WebSocket(`ws://${window.location.host}/ws/chat/${directId}/`);
+(function() {
+  const directId = "{{ direct.id }}";
+  const userId = Number("{{ request.user.id }}");
+  let currentPage = Number("{{ current_page }}") || 1;
+  const numPages = Number("{{ num_pages }}") || 1;
 
-    ws.onmessage = e => {
-      const data = JSON.parse(e.data);
-      const container = document.getElementById('chat-window');
-      const side = data.sender_id == userId ? 'justify-end' : 'justify-start';
-      const msgEl = document.createElement('div');
-      msgEl.classList.add('flex', side);
-      msgEl.innerHTML = `
-        <div class="bg-blue-500 text-white p-2 rounded-lg max-w-xs">
-          ${data.message}
-          <div class="text-xs text-gray-200 mt-1">${new Date().toLocaleTimeString()}</div>
-        </div>`;
-      container.appendChild(msgEl);
-      container.scrollTop = container.scrollHeight;
-    };
+  const chatWindow = document.getElementById('chat-window');
 
-    document.getElementById('send-btn').onclick = () => {
-      const input = document.getElementById('msg-input');
-      if (!input.value.trim()) return;
-      ws.send(JSON.stringify({
-        'message': input.value,
-        'sender_id': userId
-      }));
-      input.value = '';
-    };
-  })();
+  function scrollToBottom() {
+    chatWindow.scrollTop = chatWindow.scrollHeight;
+  }
+  setTimeout(scrollToBottom, 50);
+
+  const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+  const ws = new WebSocket(`${protocol}://${window.location.host}/ws/direct/${directId}/`);
+
+  ws.onmessage = e => {
+    const data = JSON.parse(e.data);
+    const side = data.sender_id === userId ? 'justify-end' : 'justify-start';
+    const bubbleClasses = data.sender_id === userId
+      ? 'bg-blue-500 text-white'
+      : 'bg-gray-200 text-gray-800';
+
+    const el = document.createElement('div');
+    el.classList.add('flex', side);
+
+    el.innerHTML = `
+      <div class="max-w-xs break-words p-2 rounded-lg ${bubbleClasses}">
+        ${escapeHtml(data.message)}
+        <div class="text-xs mt-1 ${data.sender_id === userId ? 'text-gray-100' : 'text-gray-600'}">
+          ${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+        </div>
+      </div>
+    `;
+    chatWindow.appendChild(el);
+    chatWindow.scrollTop = chatWindow.scrollHeight;
+  };
+
+  ws.onclose = () => {
+    console.warn('WS closed');
+  };
+
+  document.getElementById('send-btn').addEventListener('click', sendMessage);
+  document.getElementById('msg-input').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') sendMessage();
+  });
+
+  function sendMessage() {
+    const input = document.getElementById('msg-input');
+    const value = input.value.trim();
+    if (!value) return;
+    ws.send(JSON.stringify({ message: value }));
+    input.value = '';
+  }
+
+  function escapeHtml(unsafe) {
+    return unsafe
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&#039;');
+  }
+
+  let loading = false;
+  chatWindow.addEventListener('scroll', async () => {
+    if (chatWindow.scrollTop > 50) return;
+    if (loading) return;
+    if (currentPage <= 1) return; 
+    loading = true;
+
+    const prevScrollHeight = chatWindow.scrollHeight;
+    const nextPage = currentPage - 1;
+
+    try {
+      const resp = await fetch(`messages/?page=${nextPage}`, {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+      });
+      if (!resp.ok) throw new Error('Network error');
+      const payload = await resp.json();
+      const msgs = payload.messages || [];
+
+      for (let i = 0; i < msgs.length; i++) {
+        const m = msgs[i];
+        const side = m.sender_id === userId ? 'justify-end' : 'justify-start';
+        const bubbleClasses = m.sender_id === userId ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-800';
+        const wrapper = document.createElement('div');
+        wrapper.classList.add('flex', side);
+        wrapper.innerHTML = `
+          <div class="max-w-xs break-words p-2 rounded-lg ${bubbleClasses}">
+            ${escapeHtml(m.message)}
+            <div class="text-xs mt-1 ${m.sender_id === userId ? 'text-gray-100' : 'text-gray-600'}">
+              ${m.created_time}
+            </div>
+          </div>
+        `;
+        chatWindow.insertBefore(wrapper, chatWindow.firstChild);
+      }
+
+      const newScrollHeight = chatWindow.scrollHeight;
+      chatWindow.scrollTop = newScrollHeight - prevScrollHeight;
+      currentPage = payload.page;
+    } catch (err) {
+      console.error('Error loading older messages', err);
+    } finally {
+      loading = false;
+    }
+  });
+})();
 </script>
+</body>
+</html>
