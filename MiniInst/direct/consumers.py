@@ -9,13 +9,18 @@ User = get_user_model()
 class DirectConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         self.direct_id = self.scope['url_route']['kwargs']['direct_id']
+
+        self.user = self.scope["user"]
+        if not self.user.is_authenticated:
+            await self.close()
+            return
+
         self.room_group_name = f'direct_{self.direct_id}'
 
         await self.channel_layer.group_add(
             self.room_group_name,
             self.channel_name
         )
-
         await self.accept()
 
     async def disconnect(self, close_code):
@@ -27,16 +32,15 @@ class DirectConsumer(AsyncWebsocketConsumer):
     async def receive(self, text_data):
         data = json.loads(text_data)
         message = data['message']
-        sender_id = data['sender_id']
 
-        await self.save_message(self.direct_id, sender_id, message)
+        await self.save_message(self.direct_id, self.user.id, message)
 
         await self.channel_layer.group_send(
             self.room_group_name,
             {
                 'type': 'chat_message',
                 'message': message,
-                'sender_id': sender_id,
+                'sender_id': self.user.id,
             }
         )
 
@@ -48,6 +52,7 @@ class DirectConsumer(AsyncWebsocketConsumer):
 
     @sync_to_async
     def save_message(self, direct_id, sender_id, message):
+
         try:
             direct = Direct.objects.get(id=direct_id)
         except Direct.DoesNotExist:

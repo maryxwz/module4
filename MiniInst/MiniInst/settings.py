@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     'search.apps.SearchConfig',
     # 3rd party
     'channels',
+    'daphne'
 ]
 
 MIDDLEWARE = [
@@ -82,12 +83,12 @@ ASGI_APPLICATION = 'MiniInst.asgi.application'
 
 CHANNEL_LAYERS = {
     'default': {
-        'BACKEND': 'channels_redis.core.RedisChannelLayer',
-        'CONFIG': {
-            "hosts": [("localhost", 6379)],
-        },
+        'BACKEND': 'channels.layers.InMemoryChannelLayer',
+
     },
 }
+
+
 
 
 # Database

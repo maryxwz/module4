@@ -4,7 +4,7 @@ from django.contrib.auth.decorators import login_required
 from .models import Direct, DirectMessage
 from users.models import CustomUser
 
-# @login_required
+@login_required
 def inbox(request):
     directs = Direct.objects.filter(
         user1=request.user
