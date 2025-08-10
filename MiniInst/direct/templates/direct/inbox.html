@@ -1,14 +1,28 @@
-{% extends 'base.html' %}
-{% block content %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Inbox</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
 <div class="max-w-md mx-auto mt-8">
   <h1 class="text-2xl font-bold mb-4">Inbox</h1>
   <ul>
-    {% for chat in directs %}
-    {% with other=chat.get_receiver(request.user) %}
+  {% for chat in directs %}
+  {% with other=chat.other %}
     <li class="border rounded p-4 mb-2 hover:bg-gray-100">
       <a href="{% url 'direct:thread' chat.id %}" class="flex items-center space-x-4">
         <div class="flex-shrink-0">
-          <img src="{{ other.profile.avatar.url }}" alt="" class="h-10 w-10 rounded-full">
+          {% if other.profile and other.profile.avatar %}
+            <img src="{{ other.profile.avatar.url }}" alt="" class="h-10 w-10 rounded-full">
+          {% else %}
+            <div class="h-10 w-10 rounded-full bg-gray-400 flex items-center justify-center text-white font-bold">
+              {{ other.username|first|upper }}
+            </div>
+          {% endif %}
         </div>
         <div>
           <p class="font-semibold">{{ other.username }}</p>
@@ -16,10 +30,10 @@
         </div>
       </a>
     </li>
-    {% endwith %}
-    {% empty %}
-    <li class="text-gray-500">Поки немає чатів.</li>
-    {% endfor %}
-  </ul>
+  {% endwith %}
+{% endfor %}
+
+</ul>
 </div>
-{% endblock %}
+</body>
+</html>

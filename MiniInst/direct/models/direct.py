@@ -10,9 +10,13 @@ class Direct(models.Model):
     def __str__(self):
         return f"{self.user1} - {self.user2}"
 
-    def get_receiver(self, sender):
-        return self.user2 if sender == self.user1 else self.user1
-    
+    def get_receiver(self, current_user):
+        if current_user == self.user1:
+            return self.user2
+        elif current_user == self.user2:
+            return self.user1
+        return None
+        
     def save(self, *args, **kwargs):
         if self.user1.id > self.user2.id:
             self.user1, self.user2 = self.user2, self.user1
