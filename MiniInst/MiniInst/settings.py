@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'direct.apps.DirectConfig',
     'recommendations.apps.RecommendationsConfig',
     'search.apps.SearchConfig',
+    'backoffice.apps.BackofficeConfig',
 ]
 
 MIDDLEWARE = [
