@@ -1,3 +1,4 @@
+from django.shortcuts import render
 import sqlite3
 from .models import Hashtag
 
