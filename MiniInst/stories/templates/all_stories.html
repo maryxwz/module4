@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <title>Мої історії</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 40px 20px;
+            color: #333;
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .section {
+            margin-bottom: 40px;
+        }
+
+        .stories-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 20px;
+        }
+
+        .story-card {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.2s ease;
+        }
+
+        .story-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .story-content {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+        }
+
+        .story-info {
+            padding: 15px;
+            text-align: center;
+        }
+
+        .story-info p {
+            font-size: 14px;
+            margin: 5px 0;
+            color: #666;
+        }
+
+        .archived {
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+
+<h2>Мої історії</h2>
+
+<div class="section">
+    <h3>Активні</h3>
+    {% if active_stories %}
+        <div class="stories-container">
+            {% for story in active_stories %}
+                <div class="story-card">
+                    <img src="{{ story.content.url }}" alt="Story" class="story-content">
+                    <div class="story-info">
+                        <p>Опубліковано: {{ story.created_at|date:"Y-m-d H:i" }}</p>
+                        <p>Закінчується: {{ story.expires_at|date:"Y-m-d H:i" }}</p>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p style="text-align: center;">Немає активних історій</p>
+    {% endif %}
+</div>
+
+<div class="section">
+    <h3>Архівовані</h3>
+    {% if archived_stories %}
+        <div class="stories-container">
+            {% for story in archived_stories %}
+                <div class="story-card archived">
+                    <img src="{{ story.content.url }}" alt="Story" class="story-content">
+                    <div class="story-info">
+                        <p>Опубліковано: {{ story.created_at|date:"Y-m-d H:i" }}</p>
+                        <p>Архівовано</p>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p style="text-align: center;">Немає архівованих історій</p>
+    {% endif %}
+</div>
+
+</body>
+</html>
