@@ -1,0 +1,25 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Login</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 flex items-center justify-center h-screen">
+  <form method="post" class="bg-white p-6 rounded shadow-md w-full max-w-sm">
+    {% csrf_token %}
+    <h1 class="text-xl font-bold mb-4">Login</h1>
+    {{ form.non_field_errors }}
+    <div class="mb-3">
+      <label class="block text-sm">Username</label>
+      {{ form.username }}
+    </div>
+    <div class="mb-3">
+      <label class="block text-sm">Password</label>
+      {{ form.password }}
+    </div>
+    <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded">Log in</button>
+    <input type="hidden" name="next" value="{{ next }}">
+  </form>
+</body>
+</html>
