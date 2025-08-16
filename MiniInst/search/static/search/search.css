@@ -1,0 +1,151 @@
+:root{
+  --bg: #fafafa;
+  --panel: #fff;
+  --line: #eaeaea;
+  --text: #111;
+  --muted: #666;
+  --muted-2: #8a8a8a;
+  --btn-bg: #f5f5f5;
+  --btn-border: #dcdcdc;
+  --radius-lg: 14px;
+  --radius-sm: 10px;
+}
+
+*{ box-sizing: border-box; }
+html, body{ margin:0; padding:0; background: var(--bg); color: var(--text); font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; }
+
+.srch{
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 24px 16px 40px;
+}
+
+.srch__bar{
+  position: sticky;
+  top: 0;
+  background: var(--bg);
+  padding-bottom: 12px;
+  margin-bottom: 16px;
+}
+
+.srch__form{
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.srch__input{
+  flex: 1;
+  height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: #fff;
+  font-size: 15px;
+  outline: none;
+}
+
+.srch__input:focus{
+  border-color: #d0d0d0;
+}
+
+.srch__btn{
+  height: 44px;
+  padding: 0 16px;
+  border-radius: var(--radius-lg);
+  background: var(--btn-bg);
+  border: 1px solid var(--btn-border);
+  cursor: pointer;
+}
+
+.srch__panel{
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: 12px;
+}
+
+.srch__section + .srch__section{
+  border-top: 1px solid var(--line);
+  margin-top: 12px;
+  padding-top: 12px;
+}
+
+.srch__section-title{
+  font-size: 13px;
+  color: var(--muted);
+  margin: 2px 4px 8px;
+  text-transform: uppercase;
+  letter-spacing: .02em;
+}
+
+.srch__hint, .srch__empty{
+  padding: 18px 8px;
+  color: var(--muted-2);
+  font-size: 14px;
+  text-align: center;
+}
+
+.list{
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.list > li + li{
+  border-top: 1px solid var(--line);
+}
+
+.usercard{
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 10px 6px;
+  text-decoration: none;
+  color: inherit;
+}
+
+.usercard:hover{
+  background: #fdfdfd;
+  border-radius: var(--radius-sm);
+}
+
+.usercard__avatar{
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  object-fit: cover;
+  border: 1px solid var(--line);
+  background: #fff;
+  display: block;
+}
+
+.usercard__avatar--placeholder{
+  display: grid;
+  place-items: center;
+  font-size: 20px;
+  color: var(--muted);
+}
+
+.usercard__meta{
+  display: grid;
+  gap: 2px;
+}
+
+.usercard__username{
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.usercard__name{
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.usercard__bio{
+  color: var(--muted-2);
+  font-size: 12.5px;
+  max-width: 520px;
+  line-height: 1.35;
+}
+
