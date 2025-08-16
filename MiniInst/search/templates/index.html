@@ -128,7 +128,7 @@
                     <p>{{ post.caption }}</p>
                 </div>
             </article>
-            {% else %}
+            {% empty %}
             <p style="padding: 20px;">Немає постів 🥲</p>
             {% endfor %}
         </section>
