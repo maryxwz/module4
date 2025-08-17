@@ -103,7 +103,8 @@
 
 <script>
 (function () {
-  const DIRECT_ID = "{{ direct.id }}";
+  const KIND = "{{ kind }}";
+  const CHAT_ID  = "{{ chat.id }}";
   const USER_ID = Number("{{ request.user.id }}");
   let currentPage = Number("{{ current_page }}") || 1;
   const numPages = Number("{{ num_pages }}") || 1;
@@ -149,7 +150,7 @@
   }
 
   const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
-  const wsUrl = `${protocol}://${window.location.host}/ws/direct/${DIRECT_ID}/`;
+  const wsUrl = `${protocol}://${window.location.host}/ws/${KIND}/${CHAT_ID}/`;
   const socket = new WebSocket(wsUrl);
 
   socket.addEventListener('message', (e) => {

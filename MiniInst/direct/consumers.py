@@ -2,7 +2,6 @@ import json
 from channels.generic.websocket import AsyncWebsocketConsumer
 from django.contrib.auth import get_user_model
 from direct.models import Direct, DirectMessage, GroupChat, GroupMessage
-from asgiref.sync import sync_to_async
 from channels.db import database_sync_to_async
 from django.db.models import Q
 
@@ -71,7 +70,7 @@ class DirectConsumer(AsyncWebsocketConsumer):
             'sender_id': event['sender_id']
         }))
 
-    @sync_to_async
+    @database_sync_to_async
     def save_message(self, kind, chat_id, sender_id, message):
         
         try:
@@ -118,5 +117,8 @@ class DirectConsumer(AsyncWebsocketConsumer):
                 Q(id=chat_id) & (Q(user1_id=user_id) | Q(user2_id=user_id))
             ).exists()
         elif kind == 'group':
-            return GroupChat.objects.filter(id=chat_id, members__id=user_id).exists()
+            return GroupChat.objects.filter(
+                id=chat_id,
+                members__id=user_id
+            ).exists()
         return False
