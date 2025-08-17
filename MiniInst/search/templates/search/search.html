@@ -1,0 +1,89 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Пошук</title>
+  <link rel="stylesheet" href="{% static 'search/search.css' %}">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+<main class="srch">
+  <header class="srch__bar">
+    <form method="get" action="" class="srch__form">
+      <input
+        type="text"
+        class="srch__input"
+        name="q"
+        value="{{ q }}"
+        placeholder="Пошук користувачів (введіть @нік або ім’я/прізвище)"
+        autocomplete="off"
+      >
+      <button type="submit" class="srch__btn">Знайти</button>
+    </form>
+  </header>
+
+  <section class="srch__panel">
+    {% if q %}
+      {% if exact_user %}
+        <div class="srch__section">
+          <a class="usercard" href="#">
+            {% if exact_user.avatar %}
+              <img class="usercard__avatar" src="{{ exact_user.avatar.url }}" alt="@{{ exact_user.username }}">
+            {% else %}
+              <div class="usercard__avatar usercard__avatar--placeholder">👤</div>
+            {% endif %}
+            <div class="usercard__meta">
+              <div class="usercard__username">@{{ exact_user.username }}</div>
+              {% if exact_user.first_name or exact_user.last_name %}
+                <div class="usercard__name">{{ exact_user.first_name }} {{ exact_user.last_name }}</div>
+              {% endif %}
+              {% if exact_user.bio %}
+                <div class="usercard__bio">{{ exact_user.bio }}</div>
+              {% endif %}
+            </div>
+          </a>
+        </div>
+      {% endif %}
+
+      <div class="srch__section">
+        <div class="srch__section-title">
+          {% if exact_user %}Можливо, ви шукали також{% else %}Рекомендації за запитом{% endif %}
+        </div>
+
+        {% if suggestions %}
+          <ul class="list">
+            {% for u in suggestions %}
+              <li>
+                <a class="usercard" href="#">
+                  {% if u.avatar %}
+                    <img class="usercard__avatar" src="{{ u.avatar.url }}" alt="@{{ u.username }}">
+                  {% else %}
+                    <div class="usercard__avatar usercard__avatar--placeholder">👤</div>
+                  {% endif %}
+                  <div class="usercard__meta">
+                    <div class="usercard__username">@{{ u.username }}</div>
+                    {% if u.first_name or u.last_name %}
+                      <div class="usercard__name">{{ u.first_name }} {{ u.last_name }}</div>
+                    {% endif %}
+                    {% if u.bio %}
+                      <div class="usercard__bio">{{ u.bio }}</div>
+                    {% endif %}
+                  </div>
+                </a>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <div class="srch__empty">Нічого не знайдено.</div>
+        {% endif %}
+      </div>
+    {% else %}
+      <div class="srch__hint">Введіть @нік або ім’я/прізвище.</div>
+    {% endif %}
+  </section>
+</main>
+</body>
+</html>
+
+

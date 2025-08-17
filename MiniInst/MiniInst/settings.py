@@ -31,6 +31,7 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    'daphne', # for ASGI support (it must be installed first)
     # django
     'django.contrib.admin',
     'django.contrib.auth',
@@ -46,10 +47,13 @@ INSTALLED_APPS = [
     'direct.apps.DirectConfig',
     'recommendations.apps.RecommendationsConfig',
     'search.apps.SearchConfig',
+    # 3rd party
+    'channels',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -76,6 +80,16 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'MiniInst.wsgi.application'
+ASGI_APPLICATION = 'MiniInst.asgi.application'
+
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels.layers.InMemoryChannelLayer',
+
+    },
+}
+
+
 
 
 # Database
@@ -124,6 +138,12 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles' 
+STATICFILES_DIRS = [
+    BASE_DIR / 'static',
+]
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
