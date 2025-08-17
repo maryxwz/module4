@@ -1,7 +1,7 @@
 import json
 from channels.generic.websocket import AsyncWebsocketConsumer
 from django.contrib.auth import get_user_model
-from direct.models import Direct, DirectMessage
+from direct.models import Direct, DirectMessage, GroupChat, GroupMessage
 from asgiref.sync import sync_to_async
 from channels.db import database_sync_to_async
 from django.db.models import Q
@@ -11,19 +11,20 @@ User = get_user_model()
 
 class DirectConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        self.direct_id = self.scope['url_route']['kwargs']['direct_id']
+        self.kind = self.scope['url_route']['kwargs']['kind']
+        self.chat_id = self.scope['url_route']['kwargs']['chat_id']
         self.user = self.scope["user"]
         
         if not self.user.is_authenticated:
             await self.close()
             return
 
-        allowed = await self.user_in_direct(self.user.id, self.direct_id)
+        allowed = await self.user_allowed(self.user.id, self.kind, self.chat_id)
         if not allowed:
             await self.close()
             return
 
-        self.room_group_name = f'direct_{self.direct_id}'
+        self.room_group_name = f'{self.kind}_{self.chat_id}'
 
         await self.channel_layer.group_add(
             self.room_group_name,
@@ -43,18 +44,23 @@ class DirectConsumer(AsyncWebsocketConsumer):
         if not text:
             return
 
-        if not await self.user_in_direct(self.user.id, self.direct_id):
+        if not await self.user_allowed(self.user.id, self.kind, self.chat_id):
             await self.send(json.dumps({'error': 'not allowed'}))
             return
 
-        msg = await self.save_message(self.direct_id, self.user.id, text)
-
+        msg = await self.save_message(self.kind, self.chat_id, self.user.id, text)
+        if not msg:
+            await self.send(json.dumps({'error': 'save_failed'}))
+            return
+        
         payload = {
             'type': 'chat_message',
-            'id': str(msg.id),
-            'message': msg.message,
-            'sender_id': self.user.id,
-            'created_at': msg.created_at.isoformat(),
+            'id': str(msg['id']),
+            'message': msg['message'],
+            'sender_id': msg['sender_id'],
+            'sender_username': msg.get('sender_username'),
+            'created_at': msg['created_at'],
+            'created_time': msg['created_time'],
         }
 
         await self.channel_layer.group_send(self.room_group_name, payload)
@@ -66,28 +72,51 @@ class DirectConsumer(AsyncWebsocketConsumer):
         }))
 
     @sync_to_async
-    def save_message(self, direct_id, sender_id, message):
-
-        try:
-            direct = Direct.objects.get(id=direct_id)
-        except Direct.DoesNotExist:
-            return
-
+    def save_message(self, kind, chat_id, sender_id, message):
+        
         try:
             sender = User.objects.get(id=sender_id)
         except User.DoesNotExist:
             return None
-
-        msg = DirectMessage.objects.create(
-            direct=direct,
-            sender=sender,
-            message=message
-        )
-
-        return msg
+        
+        if kind == 'direct':
+            try:
+                direct = Direct.objects.get(id=chat_id)
+            except Direct.DoesNotExist:
+                return None
+            msg = DirectMessage.objects.create(
+                direct=direct,
+                sender=sender,
+                message=message
+            )
+        elif kind == 'group':
+            try:
+                group = GroupChat.objects.get(id=chat_id)
+            except GroupChat.DoesNotExist:
+                return None        
+            
+            msg = GroupMessage.objects.create(
+                group_chat=group,
+                sender=sender,
+                message=message
+            )
+        else:
+            return None
+        return {
+            'id': msg.id,
+            'message': msg.message,
+            'sender_id': msg.sender.id,
+            'sender_username': getattr(msg.sender, 'username', None),
+            'created_at': msg.created_at.isoformat(),
+            'created_time': msg.created_at.strftime('%H:%M'),
+        }
 
     @database_sync_to_async
-    def user_in_direct(self, user_id, direct_id):
-        return Direct.objects.filter(
-            Q(id=direct_id) & (Q(user1_id=user_id) | Q(user2_id=user_id))
-        ).exists()
+    def user_allowed(self, user_id, kind, chat_id):
+        if kind == 'direct':
+            return Direct.objects.filter(
+                Q(id=chat_id) & (Q(user1_id=user_id) | Q(user2_id=user_id))
+            ).exists()
+        elif kind == 'group':
+            return GroupChat.objects.filter(id=chat_id, members__id=user_id).exists()
+        return False
