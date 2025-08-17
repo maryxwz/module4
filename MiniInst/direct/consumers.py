@@ -3,15 +3,23 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 from django.contrib.auth import get_user_model
 from direct.models import Direct, DirectMessage
 from asgiref.sync import sync_to_async
+from channels.db import database_sync_to_async
+from django.db.models import Q
+
 
 User = get_user_model()
 
 class DirectConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         self.direct_id = self.scope['url_route']['kwargs']['direct_id']
-
         self.user = self.scope["user"]
+        
         if not self.user.is_authenticated:
+            await self.close()
+            return
+
+        allowed = await self.user_in_direct(self.user.id, self.direct_id)
+        if not allowed:
             await self.close()
             return
 
@@ -31,18 +39,25 @@ class DirectConsumer(AsyncWebsocketConsumer):
 
     async def receive(self, text_data):
         data = json.loads(text_data)
-        message = data['message']
+        text = data.get('message', '').strip()
+        if not text:
+            return
 
-        await self.save_message(self.direct_id, self.user.id, message)
+        if not await self.user_in_direct(self.user.id, self.direct_id):
+            await self.send(json.dumps({'error': 'not allowed'}))
+            return
 
-        await self.channel_layer.group_send(
-            self.room_group_name,
-            {
-                'type': 'chat_message',
-                'message': message,
-                'sender_id': self.user.id,
-            }
-        )
+        msg = await self.save_message(self.direct_id, self.user.id, text)
+
+        payload = {
+            'type': 'chat_message',
+            'id': str(msg.id),
+            'message': msg.message,
+            'sender_id': self.user.id,
+            'created_at': msg.created_at.isoformat(),
+        }
+
+        await self.channel_layer.group_send(self.room_group_name, payload)
 
     async def chat_message(self, event):
         await self.send(text_data=json.dumps({
@@ -58,10 +73,21 @@ class DirectConsumer(AsyncWebsocketConsumer):
         except Direct.DoesNotExist:
             return
 
-        sender = User.objects.get(id=sender_id)
+        try:
+            sender = User.objects.get(id=sender_id)
+        except User.DoesNotExist:
+            return None
 
-        DirectMessage.objects.create(
+        msg = DirectMessage.objects.create(
             direct=direct,
             sender=sender,
             message=message
         )
+
+        return msg
+
+    @database_sync_to_async
+    def user_in_direct(self, user_id, direct_id):
+        return Direct.objects.filter(
+            Q(id=direct_id) & (Q(user1_id=user_id) | Q(user2_id=user_id))
+        ).exists()
