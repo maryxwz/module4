@@ -31,6 +31,9 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    # third pary
+    "daphne",  # for ASGI support (it must be installed first)
+    "channels",
     # django
     "django.contrib.admin",
     "django.contrib.auth",
@@ -38,9 +41,6 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    # third pary
-    "daphne", # for ASGI support (it must be installed first)
-    "channels",
     # custom
     "users.apps.UsersConfig",
     "posts.apps.PostsConfig",
@@ -49,7 +49,7 @@ INSTALLED_APPS = [
     "direct.apps.DirectConfig",
     "recommendations.apps.RecommendationsConfig",
     "search.apps.SearchConfig",
-    'backoffice.apps.BackofficeConfig',
+    "backoffice.apps.BackofficeConfig",
 ]
 
 MIDDLEWARE = [
