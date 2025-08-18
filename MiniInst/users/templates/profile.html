@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block content %}
+  <h2>{{ user.username }}'s Profile</h2>
+  {% if user_profile.avatar %}
+    <img src="{{ user_profile.avatar.url }}" width="150" height="150">
+  {% endif %}
+  <p>{{ user_profile.bio }}</p>
+{% endblock %}
