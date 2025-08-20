@@ -7,10 +7,12 @@ class Post(models.Model):
         on_delete=models.CASCADE,
         related_name='posts',
     )
+    title = models.CharField(max_length=255, default="Без названия")
     image = models.ImageField(upload_to='posts/')
     caption = models.TextField(blank=True)
     is_archived = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.author.username} — {self.created_at.strftime('%Y-%m-%d %H:%M')}"
+        return f"{self.title} — {self.author.username}"
+

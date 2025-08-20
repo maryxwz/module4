@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Пост {{ post.id }}</title>
+</head>
+<body>
+    <h1>Пост {{ post.id }}</h1>
+
+    <p><strong>{{ post.author.username }}</strong> — {{ post.created_at|date:"Y-m-d H:i" }}</p>
+
+    {% if post.image %}
+      <img src="{{ post.image.url }}" width="400">
+    {% endif %}
+
+    <p>{{ post.caption }}</p>
+
+    <p>
+      <a href="{% url 'post_list' %}">⬅ Назад ко всем постам</a> |
+      <a href="{% url 'post_update' post.pk %}">✏ Редактировать</a> |
+      <a href="{% url 'post_archive' post.pk %}">📦 Архивировать</a>
+    </p>
+</body>
+</html>
