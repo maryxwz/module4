@@ -1,8 +1,34 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
+
+{% block title %}Мій профіль{% endblock %}
+
 {% block content %}
-  <h2>{{ user.username }}'s Profile</h2>
-  {% if user_profile.avatar %}
-    <img src="{{ user_profile.avatar.url }}" width="150" height="150">
-  {% endif %}
-  <p>{{ user_profile.bio }}</p>
+<div class="card p-4">
+    <h2>Профіль користувача</h2>
+
+    <p><b>Логін:</b> {{ user.username }}</p>
+    <p><b>Email:</b> {{ user.email }}</p>
+    <p><b>Ім'я:</b> {{ user.first_name }}</p>
+    <p><b>Прізвище:</b> {{ user.last_name }}</p>
+    <p><b>Дата приєднання:</b> {{ user.date_joined }}</p>
+    <p><b>Останній вхід:</b> {{ user.last_login }}</p>
+    <p><b>Біо:</b> {{ user.bio }}</p>
+
+    {% if user.avatar %}
+        <div>
+            <b>Аватар:</b><br>
+            <img src="{{ user.avatar.url }}" alt="Avatar" width="150" class="rounded">
+        </div>
+    {% endif %}
+
+    <p><b>Приватний профіль:</b>
+        {% if user.is_private %}
+            ✅ Так
+        {% else %}
+            ❌ Ні
+        {% endif %}
+    </p>
+
+    <a href="{% url 'logout' %}" class="btn btn-danger mt-3">Вийти</a>
+</div>
 {% endblock %}
