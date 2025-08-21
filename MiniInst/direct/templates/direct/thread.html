@@ -98,7 +98,7 @@
             </div>
           {% endif %}
         {% empty %}
-          <div class="text-center text-gray-500 mt-12">Немає повідомлень — почніть діалог</div>
+          <div id="empty-placeholder" class="text-center text-gray-500 mt-12">Немає повідомлень — почніть діалог</div>
         {% endfor %}
       </main>
 
@@ -141,6 +141,11 @@
     chatWindow.scrollTop = chatWindow.scrollHeight;
   }
 
+  function removeEmptyPlaceholder() {
+    const ph = document.getElementById('empty-placeholder');
+    if (ph) ph.remove();
+  }
+
   function createMessageElement({ message, created_time, sender_id, sender_username = null }) {
     const isOwn = Number(sender_id) === USER_ID;
     const wrapper = document.createElement('div');
@@ -171,6 +176,9 @@
   socket.addEventListener('message', (e) => {
     try {
       const data = JSON.parse(e.data);
+
+      removeEmptyPlaceholder();
+
       const node = createMessageElement({
         message: data.message,
         created_time: (new Date()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
@@ -192,6 +200,7 @@
     const value = msgInput.value.trim();
     if (!value) return;
     if (socket.readyState === WebSocket.OPEN) {
+      removeEmptyPlaceholder();
       socket.send(JSON.stringify({ message: value }));
       msgInput.value = '';
     } else {
@@ -224,6 +233,13 @@
 
       const payload = await resp.json();
       const msgs = payload.messages || [];
+
+      if (msgs.length === 0) {
+        loading = false;
+        return;
+      }
+
+      removeEmptyPlaceholder();
 
       const frag = document.createDocumentFragment();
       for (let i = 0; i < msgs.length; i++) {
