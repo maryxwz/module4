@@ -49,17 +49,32 @@
             </svg>
           </a>
 
-          <div class="h-10 w-10 rounded-full bg-gradient-to-tr from-pink-400 to-yellow-400 flex items-center justify-center text-white font-semibold">
-            {{ other.username|first|upper }}
-          </div>
-          <div class="font-semibold">{{ other.username }}</div>
+          {% if kind == 'direct' %}
+            {% with other_user=other %}
+              <div class="h-10 w-10 rounded-full bg-gradient-to-tr from-pink-400 to-yellow-400 flex items-center justify-center text-white font-semibold">
+                {% if other_user.profile and other_user.profile.avatar %}
+                  <img src="{{ other_user.profile.avatar.url }}" alt="" class="h-10 w-10 rounded-full object-cover">
+                {% else %}
+                  {{ other_user.username|first|upper }}
+                {% endif %}
+              </div>
+              <div class="font-semibold">{{ other_user.username }}</div>
+            {% endwith %}
+
+          {% else %}
+            {% with title=chat.name|default:other %}
+              <div class="h-10 w-10 rounded-full bg-indigo-400 flex items-center justify-center text-white font-semibold">
+                {{ title|first|upper }}
+              </div>
+              <div class="font-semibold">{{ title }}</div>
+            {% endwith %}
+          {% endif %}
         </div>
 
         <div style="width:36px; height:36px;"></div>
       </header>
 
       <main id="chat-window" class="flex-1 overflow-y-auto space-y-4 p-6 bg-[color:rgba(250,250,250,1)]">
-        {# Сервер-рендерені повідомлення (залишаю як є) #}
         {% for msg in messages %}
           {% if msg.sender == request.user %}
             <div class="flex justify-end msg-appear msg-row">
