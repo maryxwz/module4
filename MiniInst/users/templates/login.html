@@ -6,4 +6,7 @@
     {{ form.as_p }}
     <button type="submit">Login</button>
   </form>
+
+  <p><a href="{% url 'logout' %}">Logout</a></p>
+  <p><a href="{% url 'profile' %}">Профіль</a></p>
 {% endblock %}
