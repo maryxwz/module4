@@ -27,7 +27,7 @@
     {% if q %}
       {% if exact_user %}
         <div class="srch__section">
-          <a class="usercard" href="#">
+          <a class="usercard" href="{% url 'profile_public' exact_user.username %}">
             {% if exact_user.avatar %}
               <img class="usercard__avatar" src="{{ exact_user.avatar.url }}" alt="@{{ exact_user.username }}">
             {% else %}
@@ -55,7 +55,7 @@
           <ul class="list">
             {% for u in suggestions %}
               <li>
-                <a class="usercard" href="#">
+                <a class="usercard" href="{% url 'profile_public' u.username %}">
                   {% if u.avatar %}
                     <img class="usercard__avatar" src="{{ u.avatar.url }}" alt="@{{ u.username }}">
                   {% else %}

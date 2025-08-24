@@ -1,0 +1,35 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>@{{ target.username }}</title>
+  <link rel="stylesheet" href="{% static 'search/search.css' %}">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+<main class="srch">
+  <section class="srch__panel">
+    <div class="usercard">
+      {% if target.avatar %}
+        <img class="usercard__avatar" src="{{ target.avatar.url }}" alt="@{{ target.username }}">
+      {% else %}
+        <div class="usercard__avatar usercard__avatar--placeholder">👤</div>
+      {% endif %}
+      <div class="usercard__meta">
+        <div class="usercard__username">@{{ target.username }}</div>
+        {% if target.first_name or target.last_name %}
+          <div class="usercard__name">{{ target.first_name }} {{ target.last_name }}</div>
+        {% endif %}
+        {% if target.bio %}
+          <div class="usercard__bio">{{ target.bio }}</div>
+        {% endif %}
+        {% if is_private and not allowed %}
+          <div class="usercard__bio"><em>Це приватний аккаунт</em></div>
+        {% endif %}
+      </div>
+    </div>
+  </section>
+</main>
+</body>
+</html>
