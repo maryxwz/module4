@@ -5,4 +5,9 @@
     <img src="{{ user_profile.avatar.url }}" width="150" height="150">
   {% endif %}
   <p>{{ user_profile.bio }}</p>
+
+<form action="{% url 'logout' %}" method="post" style="display:inline;">
+    {% csrf_token %}
+    <button type="submit">Вийти</button>
+</form>
 {% endblock %}
