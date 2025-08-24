@@ -1,7 +1,9 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
-from users.forms import CustomUserCreationForm
+from MiniInst.users.forms import CustomUserCreationForm
+
+from MiniInst.users.models.custom_user import CustomUser
 
 def register_view(request):
     if request.method == 'POST':
