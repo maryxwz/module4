@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>User Reports</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f6fa;
+            margin: 0;
+            padding: 0;
+        }
+        h1 {
+            padding: 20px;
+            background-color: #2f3640;
+            color: white;
+            margin: 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            margin: 20px auto;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        th, td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #ddd;
+            text-align: left;
+        }
+        th {
+            background-color: #40739e;
+            color: white;
+        }
+        tr:hover {
+            background-color: #f1f2f6;
+        }
+        .status-archived {
+            color: gray;
+            font-style: italic;
+        }
+        .status-active {
+            color: #44bd32;
+            font-weight: bold;
+        }
+        a {
+            color: #0984e3;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+<h1>📢 User Reports</h1>
+
+<table>
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Author</th>
+            <th>Description</th>
+            <th>Attachment</th>
+            <th>Status</th>
+            <th>Created At</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for report in reports %}
+        <tr>
+            <td>{{ report.id }}</td>
+            <td>{{ report.author.username }}</td>
+            <td>{{ report.description|truncatechars:50 }}</td>
+            <td>
+                {% if report.content %}
+                    <a href="{{ report.content.url }}" target="_blank">View File</a>
+                {% else %}
+                    —
+                {% endif %}
+            </td>
+            <td class="{% if report.is_archived %}status-archived{% else %}status-active{% endif %}">
+                {% if report.is_archived %}Archived{% else %}Active{% endif %}
+            </td>
+            <td>{{ report.created_at|date:"Y-m-d H:i" }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="6" style="text-align:center; padding:20px;">No reports found 😌</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+</body>
+</html>

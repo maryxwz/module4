@@ -49,17 +49,32 @@
             </svg>
           </a>
 
-          <div class="h-10 w-10 rounded-full bg-gradient-to-tr from-pink-400 to-yellow-400 flex items-center justify-center text-white font-semibold">
-            {{ other.username|first|upper }}
-          </div>
-          <div class="font-semibold">{{ other.username }}</div>
+          {% if kind == 'direct' %}
+            {% with other_user=other %}
+              <div class="h-10 w-10 rounded-full bg-gradient-to-tr from-pink-400 to-yellow-400 flex items-center justify-center text-white font-semibold">
+                {% if other_user.profile and other_user.profile.avatar %}
+                  <img src="{{ other_user.profile.avatar.url }}" alt="" class="h-10 w-10 rounded-full object-cover">
+                {% else %}
+                  {{ other_user.username|first|upper }}
+                {% endif %}
+              </div>
+              <div class="font-semibold">{{ other_user.username }}</div>
+            {% endwith %}
+
+          {% else %}
+            {% with title=chat.name|default:other %}
+              <div class="h-10 w-10 rounded-full bg-indigo-400 flex items-center justify-center text-white font-semibold">
+                {{ title|first|upper }}
+              </div>
+              <div class="font-semibold">{{ title }}</div>
+            {% endwith %}
+          {% endif %}
         </div>
 
         <div style="width:36px; height:36px;"></div>
       </header>
 
       <main id="chat-window" class="flex-1 overflow-y-auto space-y-4 p-6 bg-[color:rgba(250,250,250,1)]">
-        {# Сервер-рендерені повідомлення (залишаю як є) #}
         {% for msg in messages %}
           {% if msg.sender == request.user %}
             <div class="flex justify-end msg-appear msg-row">
@@ -83,7 +98,7 @@
             </div>
           {% endif %}
         {% empty %}
-          <div class="text-center text-gray-500 mt-12">Немає повідомлень — почніть діалог</div>
+          <div id="empty-placeholder" class="text-center text-gray-500 mt-12">Немає повідомлень — почніть діалог</div>
         {% endfor %}
       </main>
 
@@ -103,7 +118,8 @@
 
 <script>
 (function () {
-  const DIRECT_ID = "{{ direct.id }}";
+  const KIND = "{{ kind }}";
+  const CHAT_ID  = "{{ chat.id }}";
   const USER_ID = Number("{{ request.user.id }}");
   let currentPage = Number("{{ current_page }}") || 1;
   const numPages = Number("{{ num_pages }}") || 1;
@@ -123,6 +139,11 @@
 
   function scrollToBottom() {
     chatWindow.scrollTop = chatWindow.scrollHeight;
+  }
+
+  function removeEmptyPlaceholder() {
+    const ph = document.getElementById('empty-placeholder');
+    if (ph) ph.remove();
   }
 
   function createMessageElement({ message, created_time, sender_id, sender_username = null }) {
@@ -149,12 +170,15 @@
   }
 
   const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
-  const wsUrl = `${protocol}://${window.location.host}/ws/direct/${DIRECT_ID}/`;
+  const wsUrl = `${protocol}://${window.location.host}/ws/${KIND}/${CHAT_ID}/`;
   const socket = new WebSocket(wsUrl);
 
   socket.addEventListener('message', (e) => {
     try {
       const data = JSON.parse(e.data);
+
+      removeEmptyPlaceholder();
+
       const node = createMessageElement({
         message: data.message,
         created_time: (new Date()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
@@ -176,6 +200,7 @@
     const value = msgInput.value.trim();
     if (!value) return;
     if (socket.readyState === WebSocket.OPEN) {
+      removeEmptyPlaceholder();
       socket.send(JSON.stringify({ message: value }));
       msgInput.value = '';
     } else {
@@ -208,6 +233,13 @@
 
       const payload = await resp.json();
       const msgs = payload.messages || [];
+
+      if (msgs.length === 0) {
+        loading = false;
+        return;
+      }
+
+      removeEmptyPlaceholder();
 
       const frag = document.createDocumentFragment();
       for (let i = 0; i < msgs.length; i++) {

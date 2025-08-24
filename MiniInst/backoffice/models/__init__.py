@@ -1,0 +1,1 @@
+from backoffice.models.user_report import UserReport as UserReport

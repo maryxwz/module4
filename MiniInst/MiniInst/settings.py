@@ -31,24 +31,25 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
-    'daphne', # for ASGI support (it must be installed first)
+    # third pary
+    "daphne",  # for ASGI support (it must be installed first)
+    "channels",
     # django
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
+    "django.contrib.admin",
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.messages",
+    "django.contrib.staticfiles",
     # custom
-    'users.apps.UsersConfig',
-    'posts.apps.PostsConfig',
-    'comments.apps.CommentsConfig',
-    'stories.apps.StoriesConfig',
-    'direct.apps.DirectConfig',
-    'recommendations.apps.RecommendationsConfig',
-    'search.apps.SearchConfig',
-    # 3rd party
-    'channels',
+    "users.apps.UsersConfig",
+    "posts.apps.PostsConfig",
+    "comments.apps.CommentsConfig",
+    "stories.apps.StoriesConfig",
+    "direct.apps.DirectConfig",
+    "recommendations.apps.RecommendationsConfig",
+    "search.apps.SearchConfig",
+    "backoffice.apps.BackofficeConfig",
 ]
 
 MIDDLEWARE = [
@@ -138,7 +139,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = 'static/'
-STATIC_ROOT = BASE_DIR / 'staticfiles' 
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [
     BASE_DIR / 'static',
 ]

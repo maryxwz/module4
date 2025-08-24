@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MiniInst</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: "Segoe UI", sans-serif;
+        }
+
+        body {
+            background-color: #fafafa;
+            color: #333;
+        }
+
+        header {
+            background-color: #fff;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 30px;
+            border-bottom: 1px solid #ddd;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #e1306c;
+        }
+
+        nav a {
+            margin-left: 20px;
+            text-decoration: none;
+            color: #555;
+            font-weight: 500;
+        }
+
+        nav a:hover {
+            color: #e1306c;
+        }
+
+        main {
+            display: flex;
+            max-width: 1200px;
+            margin: 30px auto;
+            gap: 30px;
+            padding: 0 15px;
+        }
+
+        .profile {
+            width: 250px;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+            text-align: center;
+        }
+
+        .profile img {
+            border-radius: 50%;
+            width: 100px;
+            height: 100px;
+        }
+
+        .feed {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        .post {
+            background-color: #fff;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .post-img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .post-info {
+            padding: 15px;
+        }
+
+        footer {
+            text-align: center;
+            padding: 20px;
+            color: #aaa;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">MiniInst</div>
+        <nav>
+            <a href="#">Головна</a>
+            <a href="#">Профіль</a>
+            <a href="#">Повідомлення</a>
+            <a href="#">Вийти</a>
+        </nav>
+    </header>
+
+<!--це приклад, як ця шняга може виглядати. пізніше треба буде замінити змінні, щоб сторінка працювала!    -->
+    <main>
+        <aside class="profile">
+            <img src="{{ user.avatar_url }}" alt="Avatar">
+            <h2>@{{ user.username }}</h2>
+            <p>{{ user.bio }}</p>
+        </aside>
+
+        <section class="feed">
+            {% for post in posts %}
+            <article class="post">
+                <img class="post-img" src="{{ post.image_url }}" alt="Post image">
+                <div class="post-info">
+                    <h3>@{{ post.author }}</h3>
+                    <p>{{ post.caption }}</p>
+                </div>
+            </article>
+            {% empty %}
+            <p style="padding: 20px;">Немає постів 🥲</p>
+            {% endfor %}
+        </section>
+    </main>
+
+    <footer>
+        <p>© 2025 MiniInst</p>
+    </footer>
+</body>
+</html>
