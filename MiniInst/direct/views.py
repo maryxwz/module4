@@ -77,7 +77,3 @@ def thread_messages_api(request, direct_id):
 
     return JsonResponse({'messages': data, 'page': client_page, 'num_pages': num_pages})
 
-@login_required
-def direct_view(request):
-    chats = Direct.objects.filter(user1=request.user).order_by('-created_at')
-    return render(request, 'direct/direct.html', {'chats': chats})
