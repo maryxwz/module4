@@ -1,5 +1,6 @@
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import render, redirect
+from django.core.exceptions import ValidationError, PermissionDenied
+from django.shortcuts import render, redirect, get_object_or_404
 from .forms import StoriesForms
 from .models.story import Story
 
@@ -29,3 +30,17 @@ def all_stories(request):
                   'all_stories.html',
                   {'active_stories': active_stories,
                    'archived_stories': archived_stories})
+
+
+@login_required
+def delete_story(request, int_pk):
+    story = get_object_or_404(Story, pk=int_pk)
+
+    if story.author != request.user or story.is_archived:
+        raise PermissionDenied("You can't delete this story, you are not author or story is archived.")
+
+    if request.method == 'POST':
+        story.delete()
+        return redirect('all_stories')
+
+    return render(request, 'delete_story.html', {'story': story})
