@@ -1,8 +1,88 @@
 {% extends "base.html" %}
 {% block content %}
-  <h2>{{ user.username }}'s Profile</h2>
-  {% if user_profile.avatar %}
-    <img src="{{ user_profile.avatar.url }}" width="150" height="150">
-  {% endif %}
-  <p>{{ user_profile.bio }}</p>
+<div class="profile-page">
+    <div class="profile-header">
+        <div class="avatar">
+            {% if user.avatar %}
+                <img src="{{ user.avatar.url }}" alt="{{ user.username }}'s avatar">
+            {% endif %}
+        </div>
+        <div class="profile-info">
+            <h2>{{ user.username }}</h2>
+            <p class="bio">{{ user.bio }}</p>
+        </div>
+    </div>
+
+    <div class="profile-stats">
+        <div><strong>{{ user.posts.count }}</strong> posts</div>
+        <div><strong>{{ user.followers.count }}</strong> followers</div>
+        <div><strong>{{ user.following.count }}</strong> following</div>
+    </div>
+
+    <div class="profile-posts">
+        {% for post in user.posts.all %}
+            <div class="post">
+                <img src="{{ post.image.url }}" alt="Post image">
+            </div>
+        {% empty %}
+            <p>No posts yet.</p>
+        {% endfor %}
+    </div>
+</div>
+
+<style>
+
+/*відступ для сайдбару!*/
+.profile-page {
+    margin-left: 250px;
+    padding: 20px;
+    max-width: 900px;
+}
+
+.profile-header {
+    display: flex;
+    align-items: center;
+    gap: 30px;
+    margin-bottom: 20px;
+}
+
+.avatar img {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #dbdbdb;
+}
+
+.profile-info h2 {
+    margin: 0;
+    font-size: 28px;
+}
+
+.profile-info .bio {
+    color: #555;
+}
+
+
+.profile-stats {
+    display: flex;
+    gap: 40px;
+    margin-bottom: 20px;
+    font-weight: 500;
+}
+
+
+.profile-posts {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+}
+
+.profile-posts .post img {
+    width: 100%;
+    aspect-ratio: 1/1;
+    object-fit: cover;
+    border-radius: 5px;
+}
+</style>
 {% endblock %}
