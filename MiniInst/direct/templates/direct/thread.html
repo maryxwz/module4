@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Чат — {{ other.username }}</title>
+  <title>Чат — {% if kind == 'direct' %}{{ other.username }}{% else %}{{ other }}{% endif %}</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     #chat-window::-webkit-scrollbar { display: none; }
@@ -17,10 +17,11 @@
     .chat-input { height: 3rem; }
     .btn-send { height: 3rem; width: 3rem; min-width: 3rem; display: inline-flex; align-items: center; justify-content: center; }
     body { background: linear-gradient(180deg,#fafafa 0%, #f3f4f6 100%); }
-    .ctx-menu { position: fixed; z-index: 60; min-width: 120px; background: white; border: 1px solid #e5e7eb; border-radius: 6px; box-shadow: 0 6px 18px rgba(0,0,0,0.08); padding: 6px 0; }
+    .ctx-menu { position: fixed; z-index: 60; min-width: 120px; background: white; border: 1px solid #e5e7eb; border-radius: 6px; box-shadow: 0 6px 18px rgba(0,0,0,0.08); padding: 6px 0; max-width: 90vw; max-height: 80vh; overflow: auto; }
     .ctx-menu button { display: block; width: 100%; padding: 8px 12px; text-align: left; font-size: 14px; background: transparent; border: none; }
     .ctx-menu button:hover { background: #f3f4f6; }
     .edited-label { font-size: 10px; opacity: 0.8; margin-left: 6px; }
+    .msg-meta { font-size: 11px; margin-top: 4px; }
     #edit-toolbar { display: none; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 999px; background: #f3f4f6; font-size: 13px; }
     #edit-toolbar .text { color: #111827; }
     #edit-toolbar button { background: transparent; border: none; font-weight: 600; cursor: pointer; }
@@ -59,52 +60,16 @@
         <div style="width:36px; height:36px;"></div>
       </header>
 
-      <main id="chat-window" class="flex-1 overflow-y-auto space-y-4 p-6 bg-[color:rgba(250,250,250,1)]">
-        {% for msg in messages %}
-          {% if msg.sender == request.user %}
-            <div class="flex justify-end msg-appear msg-row">
-              <div class="bubble bubble-outgoing message-bubble" data-id="{{ msg.id }}" data-sender-id="{{ msg.sender.id }}">
-                <div class="text-sm break-words message-text">{{ msg.message }}</div>
-                <div class="text-[11px] mt-1 opacity-80 text-right">
-                  {{ msg.created_at|time:"H:i" }}
-                  {% if msg.edited %}
-                    <span class="edited-label">(ред.)</span>
-                  {% endif %}
-                </div>
-              </div>
-            </div>
-          {% else %}
-            <div class="flex items-start gap-3 msg-appear msg-row">
-              <div class="flex-shrink-0 mt-1">
-                <div class="h-8 w-8 rounded-full bg-gray-300 flex items-center justify-center text-gray-700 font-medium">
-                  {{ msg.sender.username|first|upper }}
-                </div>
-              </div>
-              <div class="bubble bubble-incoming message-bubble" data-id="{{ msg.id }}" data-sender-id="{{ msg.sender.id }}">
-                <div class="text-sm font-medium mb-1">{{ msg.sender.username }}</div>
-                <div class="text-sm break-words message-text">{{ msg.message }}</div>
-                <div class="text-[11px] mt-1 text-gray-500">
-                  {{ msg.created_at|time:"H:i" }}
-                  {% if msg.edited %}
-                    <span class="edited-label">(ред.)</span>
-                  {% endif %}
-                </div>
-              </div>
-            </div>
-          {% endif %}
-        {% empty %}
-          <div id="empty-placeholder" class="text-center text-gray-500 mt-12">Немає повідомлень — почніть діалог</div>
-        {% endfor %}
-      </main>
+      <main id="chat-window" class="flex-1 overflow-y-auto space-y-4 p-6 bg-[color:rgba(250,250,250,1)]"></main>
 
       <footer class="border-t bg-white px-4 py-3">
         <div class="max-w-3xl mx-auto flex items-center gap-3">
           <div id="edit-toolbar" class="hidden">
-            <div class="text">Редагуєте повідомлення</div>
-            <button id="cancel-edit">Скасувати</button>
+            <div class="text">Editing message</div>
+            <button id="cancel-edit">Cancel</button>
           </div>
-          <input id="msg-input" type="text" placeholder="Написати повідомлення..." class="flex-1 border rounded-full px-4 text-sm focus:outline-none focus:ring-2 focus:ring-sky-200 chat-input" />
-          <button id="send-btn" class="bg-[#0095f6] hover:bg-[#0084e6] text-white rounded-full btn-send" aria-label="Відправити">
+          <input id="msg-input" type="text" placeholder="Write a message..." class="flex-1 border rounded-full px-4 text-sm focus:outline-none focus:ring-2 focus:ring-sky-200 chat-input" />
+          <button id="send-btn" class="bg-[#0095f6] hover:bg-[#0084e6] text-white rounded-full btn-send" aria-label="Send">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" class="h-5 w-5">
               <path fill="#ffffff" d="M568.4 37.7C578.2 34.2 589 36.7 596.4 44C603.8 51.3 606.2 62.2 602.7 72L424.7 568.9C419.7 582.8 406.6 592 391.9 592C377.7 592 364.9 583.4 359.6 570.3L295.4 412.3C290.9 401.3 292.9 388.7 300.6 379.7L395.1 267.3C400.2 261.2 399.8 252.3 394.2 246.7C388.6 241.1 379.6 240.7 373.6 245.8L261.2 340.1C252.1 347.7 239.6 349.7 228.6 345.3L70.1 280.8C57 275.5 48.4 262.7 48.4 248.5C48.4 233.8 57.6 220.7 71.5 215.7L568.4 37.7z"/></svg>
           </button>
@@ -113,49 +78,49 @@
     </div>
   </div>
 
-<div id="ctx-menu" style="display:none;" class="ctx-menu"></div>
+  <div id="ctx-menu" style="display:none;" class="ctx-menu"></div>
 
 <script>
 (function () {
   const KIND = "{{ kind }}";
   const CHAT_ID = "{{ chat.id }}";
   const USER_ID = Number("{{ request.user.id }}");
-  let currentPage = Number("{{ current_page }}") || 1;
-  const numPages = Number("{{ num_pages }}") || 1;
+
   const chatWindow = document.getElementById('chat-window');
   const sendBtn = document.getElementById('send-btn');
   const msgInput = document.getElementById('msg-input');
   const ctxMenu = document.getElementById('ctx-menu');
   const editToolbar = document.getElementById('edit-toolbar');
   const cancelEditBtn = document.getElementById('cancel-edit');
+
   let editingId = null;
+  let currentPage = 0;
+  let numPages = 1;
+  let loading = false;
 
   function escapeHtml(unsafe = '') {
-    return String(unsafe).replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&#039;');
+    return String(unsafe)
+      .replaceAll('&', '&amp;').replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;').replaceAll('"', '&quot;')
+      .replaceAll("'", '&#039;');
   }
-
-  function scrollToBottom() {
-    chatWindow.scrollTop = chatWindow.scrollHeight;
-  }
-
-  function removeEmptyPlaceholder() {
-    const ph = document.getElementById('empty-placeholder');
-    if (ph) ph.remove();
-  }
+  function scrollToBottom() { chatWindow.scrollTop = chatWindow.scrollHeight; }
 
   function createMessageElement({ id=null, message, created_time, sender_id, sender_username = null, edited=false }) {
     const isOwn = Number(sender_id) === USER_ID;
     const wrapper = document.createElement('div');
-    wrapper.classList.add('msg-appear');
-    wrapper.classList.add('flex', isOwn ? 'justify-end' : 'justify-start');
+    wrapper.classList.add('msg-appear', 'flex', isOwn ? 'justify-end' : 'justify-start');
+
     const bubbleClass = isOwn ? 'bubble-outgoing' : 'bubble-incoming';
     const senderHtml = (!isOwn && sender_username) ? `<div class="text-sm font-medium mb-1">${escapeHtml(sender_username)}</div>` : '';
-    const editedHtml = edited ? `<span class="edited-label">(ред.)</span>` : '';
+    const editedHtml = edited ? `<span class="edited-label">edited</span>` : '';
+
     wrapper.innerHTML = `
-      <div class="bubble ${bubbleClass} max-w-xs break-words p-2 rounded-lg message-bubble" data-id="${escapeHtml(String(id || ''))}" data-sender-id="${escapeHtml(String(sender_id))}">
+      <div class="bubble ${bubbleClass} max-w-xs break-words p-2 rounded-lg message-bubble"
+           data-id="${escapeHtml(String(id || ''))}" data-sender-id="${escapeHtml(String(sender_id))}">
         ${senderHtml}
         <div class="text-sm break-words message-text">${escapeHtml(message)}</div>
-        <div class="text-[11px] mt-1 ${isOwn ? 'text-gray-100 text-right' : 'text-gray-500'}">
+        <div class="msg-meta ${isOwn ? 'text-gray-100 text-right' : 'text-gray-500'}">
           ${escapeHtml(created_time || '')} ${editedHtml}
         </div>
       </div>
@@ -173,133 +138,149 @@
     try {
       const data = JSON.parse(e.data);
       const type = data.type || 'chat_message';
+
       if (type === 'chat_message') {
-        removeEmptyPlaceholder();
         const node = createMessageElement({
           id: data.id,
           message: data.message,
           created_time: data.created_time || (new Date()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           sender_id: data.sender_id,
           sender_username: data.sender_username || null,
-          edited: false
+          edited: data.edited || false
         });
         chatWindow.appendChild(node);
         scrollToBottom();
-      } else if (type === 'chat_message_edit') {
+      }
+
+      if (type === 'chat_message_edit') {
         const id = String(data.id);
         const bubble = chatWindow.querySelector(`.message-bubble[data-id="${id}"]`);
         if (bubble) {
           const textEl = bubble.querySelector('.message-text');
           if (textEl) textEl.textContent = data.message;
           let editedLabel = bubble.querySelector('.edited-label');
-          if (!editedLabel && data.edited) {
-            const timeEl = bubble.querySelector('.text-[11px]') || bubble.querySelector('div:last-child');
-            if (timeEl) {
-              const span = document.createElement('span');
-              span.className = 'edited-label';
-              span.textContent = ' (ред.)';
-              timeEl.appendChild(span);
-            }
+          const meta = bubble.querySelector('.msg-meta') || bubble.querySelector('div:last-child');
+          if (!editedLabel && data.edited && meta) {
+            const span = document.createElement('span');
+            span.className = 'edited-label';
+            span.textContent = ' edited';
+            meta.appendChild(span);
           }
         }
-        if (editingId && String(editingId) === String(data.id)) {
-          cancelEdit();
-        }
-      } else if (type === 'chat_message_delete') {
+        if (editingId && String(editingId) === String(data.id)) cancelEdit();
+      }
+
+      if (type === 'chat_message_delete') {
         const id = String(data.id);
         const bubble = chatWindow.querySelector(`.message-bubble[data-id="${id}"]`);
         if (bubble) {
           const wrapper = bubble.closest('.msg-appear');
-          if (wrapper) wrapper.remove();
-          else bubble.remove();
+          if (wrapper) wrapper.remove(); else bubble.remove();
         }
         if (editingId && String(editingId) === String(id)) cancelEdit();
-      } else {
       }
-    } catch (err) {
-    }
+    } catch (_) {}
   });
 
-  socket.addEventListener('close', () => {
-  });
+  function optimisticUpdateEdited(id, newText) {
+    const bubble = chatWindow.querySelector(`.message-bubble[data-id="${id}"]`);
+    if (!bubble) return;
+    const textEl = bubble.querySelector('.message-text');
+    if (textEl) textEl.textContent = newText;
+    let editedLabel = bubble.querySelector('.edited-label');
+    const meta = bubble.querySelector('.msg-meta') || bubble.querySelector('div:last-child');
+    if (!editedLabel && meta) {
+      const span = document.createElement('span');
+      span.className = 'edited-label';
+      span.textContent = ' edited';
+      meta.appendChild(span);
+    }
+  }
 
   function sendMessage() {
     const value = msgInput.value.trim();
     if (!value) return;
     if (socket.readyState === WebSocket.OPEN) {
-      removeEmptyPlaceholder();
       if (editingId) {
+        optimisticUpdateEdited(editingId, value);
         socket.send(JSON.stringify({ action: 'edit', id: editingId, message: value }));
         cancelEdit();
       } else {
         socket.send(JSON.stringify({ message: value }));
       }
       msgInput.value = '';
-    } else {
     }
   }
-
   sendBtn.addEventListener('click', sendMessage);
-  msgInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') sendMessage();
-  });
+  msgInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') sendMessage(); });
 
-  let loading = false;
+  async function loadPage(page) {
+    const resp = await fetch(`messages/?page=${page}`, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+    if (!resp.ok) return null;
+    const payload = await resp.json();
+    numPages = payload.num_pages || 1;
+    return payload;
+  }
+
+  async function loadInitial() {
+    const payload = await loadPage(1);
+    if (!payload) return;
+    const msgs = payload.messages || [];
+    if (msgs.length === 0) {
+      const ph = document.createElement('div');
+      ph.id = 'empty-placeholder';
+      ph.className = 'text-center text-gray-500 mt-12';
+      ph.textContent = 'No messages — start the conversation';
+      chatWindow.appendChild(ph);
+    } else {
+      msgs.forEach(m => {
+        chatWindow.appendChild(createMessageElement({
+          id: m.id, message: m.message, created_time: m.created_time,
+          sender_id: m.sender_id, sender_username: m.sender_username || null,
+          edited: m.edited || false
+        }));
+      });
+      scrollToBottom();
+    }
+    currentPage = payload.page || 1;
+  }
+  loadInitial();
 
   chatWindow.addEventListener('scroll', async () => {
     if (chatWindow.scrollTop > 50) return;
     if (loading) return;
-    if (currentPage <= 1) return;
+    if (currentPage >= numPages) return;
     loading = true;
     const prevScrollHeight = chatWindow.scrollHeight;
-    const nextPage = currentPage - 1;
+    const nextPage = currentPage + 1;
     try {
-      const resp = await fetch(`messages/?page=${nextPage}`, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
-      if (!resp.ok) throw new Error('Network error');
-      const payload = await resp.json();
+      const payload = await loadPage(nextPage);
+      if (!payload) return;
       const msgs = payload.messages || [];
-      if (msgs.length === 0) {
-        loading = false;
-        return;
-      }
-      removeEmptyPlaceholder();
+      if (msgs.length === 0) return;
       const frag = document.createDocumentFragment();
-      for (let i = 0; i < msgs.length; i++) {
-        const m = msgs[i];
-        const node = createMessageElement({
-          id: m.id,
-          message: m.message,
-          created_time: m.created_time,
-          sender_id: m.sender_id,
-          sender_username: m.sender_username || null,
+      msgs.forEach(m => {
+        frag.appendChild(createMessageElement({
+          id: m.id, message: m.message, created_time: m.created_time,
+          sender_id: m.sender_id, sender_username: m.sender_username || null,
           edited: m.edited || false
-        });
-        frag.appendChild(node);
-      }
+        }));
+      });
       chatWindow.insertBefore(frag, chatWindow.firstChild);
       const newScrollHeight = chatWindow.scrollHeight;
       chatWindow.scrollTop = newScrollHeight - prevScrollHeight;
       currentPage = payload.page;
-    } catch (err) {
     } finally {
       loading = false;
     }
   });
 
-  setTimeout(scrollToBottom, 50);
-
   function closeCtxMenu() {
     ctxMenu.style.display = 'none';
     ctxMenu.innerHTML = '';
   }
-
-  document.addEventListener('click', (e) => {
-    if (!ctxMenu.contains(e.target)) closeCtxMenu();
-  });
-
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') closeCtxMenu();
-  });
+  document.addEventListener('click', (e) => { if (!ctxMenu.contains(e.target)) closeCtxMenu(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeCtxMenu(); });
 
   function onMessageContextMenu(e, bubbleEl) {
     e.preventDefault();
@@ -307,21 +288,26 @@
     const senderId = Number(bubbleEl.getAttribute('data-sender-id'));
     const messageId = bubbleEl.getAttribute('data-id');
     if (senderId !== USER_ID) return;
-    ctxMenu.style.left = `${e.clientX}px`;
-    ctxMenu.style.top = `${e.clientY}px`;
     ctxMenu.style.display = 'block';
     ctxMenu.innerHTML = `
-      <button data-action="edit">Редагувати</button>
-      <button data-action="delete">Видалити</button>
+      <button data-action="edit">Edit</button>
+      <button data-action="delete">Delete</button>
     `;
-    ctxMenu.querySelector('[data-action="edit"]').addEventListener('click', () => {
-      closeCtxMenu();
-      beginInlineEdit(bubbleEl, messageId);
-    });
-    ctxMenu.querySelector('[data-action="delete"]').addEventListener('click', () => {
-      closeCtxMenu();
-      performDelete(messageId);
-    });
+    document.body.appendChild(ctxMenu);
+    const clickX = e.clientX;
+    const clickY = e.clientY;
+    ctxMenu.style.left = '0px';
+    ctxMenu.style.top = '0px';
+    const { width: mw = 140, height: mh = 80 } = ctxMenu.getBoundingClientRect();
+    let left = clickX, top = clickY;
+    if (left + mw + 8 > window.innerWidth) left = window.innerWidth - mw - 8;
+    if (top + mh + 8 > window.innerHeight) top = window.innerHeight - mh - 8;
+    if (left < 8) left = 8;
+    if (top < 8) top = 8;
+    ctxMenu.style.left = `${left}px`;
+    ctxMenu.style.top = `${top}px`;
+    ctxMenu.querySelector('[data-action="edit"]').addEventListener('click', () => { closeCtxMenu(); beginInlineEdit(bubbleEl, messageId); });
+    ctxMenu.querySelector('[data-action="delete"]').addEventListener('click', () => { closeCtxMenu(); performDelete(messageId); });
   }
 
   function beginInlineEdit(bubbleEl, messageId) {
@@ -332,34 +318,31 @@
     msgInput.focus();
     editToolbar.style.display = 'flex';
   }
-
   function cancelEdit() {
     editingId = null;
     msgInput.value = '';
     editToolbar.style.display = 'none';
   }
-
-  cancelEditBtn.addEventListener('click', (e) => {
-    e.preventDefault();
-    cancelEdit();
-  });
+  cancelEditBtn.addEventListener('click', (e) => { e.preventDefault(); cancelEdit(); });
 
   function performDelete(messageId) {
-    if (!confirm('Ви дійсно хочете видалити повідомлення?')) return;
+    if (!confirm('Are you sure you want to delete this message?')) return;
     if (socket.readyState === WebSocket.OPEN) {
       socket.send(JSON.stringify({ action: 'delete', id: messageId }));
     } else {
-      alert('З\'єднання втрачено, спробуйте пізніше');
+      alert('Connection lost, try later');
     }
   }
 
-  function attachContextToExisting() {
+  const observer = new MutationObserver(() => {
     document.querySelectorAll('.message-bubble').forEach(b => {
-      b.addEventListener('contextmenu', (e) => onMessageContextMenu(e, b));
+      if (!b._ctxBound) {
+        b.addEventListener('contextmenu', (e) => onMessageContextMenu(e, b));
+        b._ctxBound = true;
+      }
     });
-  }
-
-  attachContextToExisting();
+  });
+  observer.observe(chatWindow, { childList: true, subtree: true });
 })();
 </script>
 </body>

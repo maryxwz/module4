@@ -1,5 +1,4 @@
 import json
-import uuid
 from channels.generic.websocket import AsyncWebsocketConsumer
 from django.contrib.auth import get_user_model
 from direct.models import Direct, DirectMessage, GroupChat, GroupMessage
@@ -28,8 +27,9 @@ class DirectConsumer(AsyncWebsocketConsumer):
         await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
 
     async def receive(self, text_data):
-        data = json.loads(text_data)
+        data = json.loads(text_data or "{}")
         action = data.get('action')
+
         if not action:
             text = data.get('message', '').strip()
             if not text:
@@ -49,6 +49,7 @@ class DirectConsumer(AsyncWebsocketConsumer):
                 'sender_username': msg.get('sender_username'),
                 'created_at': msg['created_at'],
                 'created_time': msg['created_time'],
+                'edited': msg.get('edited', False),
             }
             await self.channel_layer.group_send(self.room_group_name, payload)
             return
@@ -68,8 +69,7 @@ class DirectConsumer(AsyncWebsocketConsumer):
                 'id': str(message_id),
                 'message': new_text,
                 'sender_id': self.user.id,
-                'edited': edited.get('has_edited_field', False),
-                'edited_time': edited.get('edited_time'),
+                'edited': True,
             }
             await self.channel_layer.group_send(self.room_group_name, payload)
             return
@@ -83,10 +83,7 @@ class DirectConsumer(AsyncWebsocketConsumer):
             if not deleted:
                 await self.send(json.dumps({'error': 'delete_failed'}))
                 return
-            payload = {
-                'type': 'chat_message_delete',
-                'id': str(message_id),
-            }
+            payload = {'type': 'chat_message_delete', 'id': str(message_id)}
             await self.channel_layer.group_send(self.room_group_name, payload)
             return
 
@@ -99,6 +96,7 @@ class DirectConsumer(AsyncWebsocketConsumer):
             'sender_username': event.get('sender_username'),
             'created_at': event.get('created_at'),
             'created_time': event.get('created_time'),
+            'edited': event.get('edited', False),
         }))
 
     async def chat_message_edit(self, event):
@@ -108,7 +106,6 @@ class DirectConsumer(AsyncWebsocketConsumer):
             'message': event.get('message'),
             'sender_id': event.get('sender_id'),
             'edited': event.get('edited', True),
-            'edited_time': event.get('edited_time'),
         }))
 
     async def chat_message_delete(self, event):
@@ -144,13 +141,14 @@ class DirectConsumer(AsyncWebsocketConsumer):
             'sender_username': getattr(msg.sender, 'username', None),
             'created_at': msg.created_at.isoformat(),
             'created_time': msg.created_at.strftime('%H:%M'),
+            'edited': getattr(msg, 'edited', False),
         }
 
     @database_sync_to_async
     def user_allowed(self, user_id, kind, chat_id):
         if kind == 'direct':
             return Direct.objects.filter(Q(id=chat_id) & (Q(user1_id=user_id) | Q(user2_id=user_id))).exists()
-        elif kind == 'group':
+        if kind == 'group':
             return GroupChat.objects.filter(id=chat_id, members__id=user_id).exists()
         return False
 
@@ -163,7 +161,8 @@ class DirectConsumer(AsyncWebsocketConsumer):
                 msg = GroupMessage.objects.get(id=message_id, group_chat_id=chat_id)
             else:
                 return None
-        except (DirectMessage.DoesNotExist, GroupMessage.DoesNotExist, DirectMessage.MultipleObjectsReturned, GroupMessage.MultipleObjectsReturned):
+        except (DirectMessage.DoesNotExist, GroupMessage.DoesNotExist,
+                DirectMessage.MultipleObjectsReturned, GroupMessage.MultipleObjectsReturned):
             return None
         if msg.sender_id != user_id:
             return None
@@ -173,7 +172,7 @@ class DirectConsumer(AsyncWebsocketConsumer):
             fields_to_update.append('edited')
         msg.message = new_text
         msg.save(update_fields=fields_to_update)
-        return {'edited_time': msg.created_at.isoformat(), 'has_edited_field': hasattr(msg, 'edited')}
+        return {'edited': msg.edited}
 
     @database_sync_to_async
     def delete_message(self, kind, chat_id, user_id, message_id):
