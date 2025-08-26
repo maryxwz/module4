@@ -4,11 +4,11 @@
     <div class="profile-header">
         <div class="avatar">
             {% if user.avatar %}
-                <img src="{{ user.avatar.url }}" alt="{{ user.username }}'s avatar">
+                <img src="{{ user.avatar.url }}" alt="{{ username }}'s avatar">
             {% endif %}
         </div>
         <div class="profile-info">
-            <h2>{{ user.username }}</h2>
+            <h2>{{ username }}</h2>
             <p class="bio">{{ user.bio }}</p>
         </div>
     </div>

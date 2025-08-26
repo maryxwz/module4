@@ -16,7 +16,7 @@
             <a href="/direct/inbox/">💬 Чати</a>
             <a href="#">❤️ Сповіщення</a>
             <a href="#">➕ Створити</a>
-            <a href="/users/profile/">👤 Профіль</a>
+            <a href="{% url 'profile' username=request.user.username %}">👤 Профіль</a>
         </nav>
     </aside>
 
