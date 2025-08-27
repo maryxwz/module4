@@ -10,19 +10,14 @@
     <aside class="sidebar">
         <div class="logo">MiniInst</div>
         <nav>
-            <a href="#">🏠 Головна</a>
-            <a href="#">🔍 Пошук</a>
-            <a href="#">⭐ Цікаве</a>
-            <a href="#">🎬 Reels</a>
-            <a href="#">💬 Повідомлення</a>
+            <a href="/">🏠 Головна</a>
+            <a href="/search">🔍 Пошук</a>
+            <a href="/stories/all_stories">🎬 Історії</a>
+            <a href="/direct/inbox/">💬 Чати</a>
             <a href="#">❤️ Сповіщення</a>
             <a href="#">➕ Створити</a>
-            <a href="#">👤 Профіль</a>
+            <a href="{% url 'profile' username=request.user.username %}">👤 Профіль</a>
         </nav>
-        <div class="bottom">
-            <a href="#">☰ Ще</a>
-            <a href="#">📦 Інші продукти</a>
-        </div>
     </aside>
 
     <div class="content">

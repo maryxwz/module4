@@ -20,6 +20,10 @@
     </div>
     <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded">Log in</button>
     <input type="hidden" name="next" value="{{ next }}">
+    <a href="{% url 'admin:login' %}"
+       class="mt-3 block w-full text-center bg-yellow-500 hover:bg-yellow-600 text-white py-2 rounded-md font-medium transition">
+      Увійти як адміністратор
+    </a>
   </form>
 </body>
 </html>
