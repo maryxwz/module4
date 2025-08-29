@@ -8,4 +8,9 @@ urlpatterns = [
          views.user_reports_list,
          name='user_reports_list'
     ),
+    path(
+        'settings/',
+        views.settings,
+        name='settings'
+    )
 ]
