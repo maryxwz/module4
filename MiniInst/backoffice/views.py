@@ -1,10 +1,13 @@
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.decorators import login_required
 from django.http import HttpRequest, HttpResponse
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
+from django.views.decorators.http import require_POST
+from django.contrib import messages
 
-from backoffice.forms import UserSettingsForm
+from backoffice.forms import UserSettingsForm, UserReportForm
 from backoffice.models import UserReport
+from users.models import CustomUser
 
 
 @staff_member_required
@@ -35,3 +38,45 @@ def settings(request: HttpRequest) -> HttpResponse:
         template_name='backoffice/settings.html',
         context={'form': form},
     )
+
+
+@login_required
+@require_POST
+def report_user(request, username):
+    reported_user = get_object_or_404(CustomUser, username=username)
+    current_user = request.user
+
+    if current_user == reported_user:
+        messages.error(request, 'Ви не можете поскаржитися на себе')
+        return redirect('profile', username=username)
+
+    form = UserReportForm(request.POST, request.FILES)
+
+    if form.is_valid():
+        content_file = form.cleaned_data.get('content')
+        if content_file and content_file.size > 10 * 1024 * 1024:
+            messages.error(request, 'Розмір файлу не повинен перевищувати 10MB')
+            return redirect('profile', username=username)
+
+        try:
+            report = form.save(commit=False)
+            report.author = current_user
+            report.description = f"Report to user:{reported_user.username}\n" + report.description
+            report.save()
+
+            messages.success(request, 'Вашу скаргу успішно надіслано. Дякуємо за повідомлення!')
+
+        except Exception as e:
+            messages.error(request, 'Виникла помилка при надсиланні скарги. Спробуйте пізніше.')
+
+    else:
+        for field, errors in form.errors.items():
+            for error in errors:
+                if field == 'description':
+                    messages.error(request, f'Опис скарги: {error}')
+                elif field == 'content':
+                    messages.error(request, f'Файл: {error}')
+                else:
+                    messages.error(request, f'Помилка: {error}')
+
+    return redirect('profile', username=username)
