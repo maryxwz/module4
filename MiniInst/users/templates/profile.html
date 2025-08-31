@@ -1,34 +1,807 @@
-{% extends 'base.html' %}
-
-{% block title %}Мій профіль{% endblock %}
-
+{% extends "base.html" %}
 {% block content %}
-<div class="card p-4">
-    <h2>Профіль користувача</h2>
 
-    <p><b>Логін:</b> {{ user.username }}</p>
-    <p><b>Email:</b> {{ user.email }}</p>
-    <p><b>Ім'я:</b> {{ user.first_name }}</p>
-    <p><b>Прізвище:</b> {{ user.last_name }}</p>
-    <p><b>Дата приєднання:</b> {{ user.date_joined }}</p>
-    <p><b>Останній вхід:</b> {{ user.last_login }}</p>
-    <p><b>Біо:</b> {{ user.bio }}</p>
+<!-- Messages -->
+{% if messages %}
+    <div class="messages-container">
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">
+                <span>{{ message }}</span>
+                <button class="alert-close" onclick="this.parentElement.remove()">×</button>
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
 
-    {% if user.avatar %}
-        <div>
-            <b>Аватар:</b><br>
-            <img src="{{ user.avatar.url }}" alt="Avatar" width="150" class="rounded">
+<div class="profile-page">
+    <div class="profile-header">
+        <div class="avatar">
+            {% if profile_user.avatar %}
+                <img src="{{ profile_user.avatar.url }}" alt="{{ profile_user.username }}'s avatar">
+            {% else %}
+                <div class="default-avatar">
+                    <svg class="w-20 h-20 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"/>
+                    </svg>
+                </div>
+            {% endif %}
+        </div>
+        <div class="profile-info">
+            <div class="profile-header-top">
+                <h2>{{ profile_user.username }}</h2>
+                <div class="profile-actions">
+                    {% if profile_user != request.user %}
+                        <div class="follow-actions">
+                            <button class="btn-follow-disabled">Підписатися</button>
+                        </div>
+
+                        <!-- Menu with three dots -->
+                        <div class="dropdown-menu">
+                            <button class="menu-btn" onclick="toggleMenu()" id="menuBtn">
+                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"/>
+                                </svg>
+                            </button>
+                            <div class="dropdown-content" id="dropdownContent">
+                                <button onclick="openReportModal()" class="dropdown-item report-btn">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"/>
+                                    </svg>
+                                    Поскаржитися
+                                </button>
+                                <button class="dropdown-item block-btn-disabled">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636m12.728 12.728L18.364 5.636M5.636 18.364l12.728-12.728"/>
+                                    </svg>
+                                    Заблокувати
+                                </button>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if can_view_details %}
+                {% if profile_user.bio %}
+                    <p class="bio">{{ profile_user.bio }}</p>
+                {% endif %}
+
+                <div class="profile-stats">
+                    <div><strong>{{ posts_count }}</strong> публікацій</div>
+                    <div><strong>{{ followers_count }}</strong> підписників</div>
+                    <div><strong>{{ following_count }}</strong> підписок</div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if can_view_details %}
+        <div class="profile-posts">
+            {% for post in posts %}
+                <div class="post">
+                    {% if post.image %}
+                        <img src="{{ post.image.url }}" alt="Post image">
+                    {% endif %}
+                </div>
+            {% empty %}
+                <div class="no-posts">
+                    <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                    </svg>
+                    <p>Поки що немає публікацій</p>
+                </div>
+            {% endfor %}
+        </div>
+    {% elif profile_user.is_private %}
+        <div class="private-notice">
+            <svg class="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+            </svg>
+            <h3>Цей акаунт приватний</h3>
+            <p>Підпішіться, щоб бачити фото та відео користувача {{ profile_user.username }}.</p>
         </div>
     {% endif %}
-
-    <p><b>Приватний профіль:</b>
-        {% if user.is_private %}
-            ✅ Так
-        {% else %}
-            ❌ Ні
-        {% endif %}
-    </p>
-
-    <a href="{% url 'logout' %}" class="btn btn-danger mt-3">Вийти</a>
 </div>
+
+<!-- Report Modal -->
+<div id="reportModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Поскаржитися на {{ profile_user.username }}</h3>
+            <button class="close-btn" onclick="closeReportModal()">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+        <form id="reportForm" method="post" action="{% url 'report_user' profile_user.username %}" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="modal-body">
+                <div id="form-errors" class="form-errors" style="display: none;"></div>
+                <div class="form-group">
+                    <label for="{{ report_form.description.id_for_label }}">Опишіть проблему:</label>
+                    {{ report_form.description }}
+                    <div class="field-error" id="description-error"></div>
+                </div>
+                <div class="form-group">
+                    <label for="{{ report_form.content.id_for_label }}">Додати файл (необов'язково):</label>
+                    {{ report_form.content }}
+                    <small class="file-hint">Максимальний розмір файлу: 10MB. Підтримувані формати: зображення, відео, PDF</small>
+                    <div class="field-error" id="content-error"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-cancel" onclick="closeReportModal()">Скасувати</button>
+                <button type="submit" class="btn-submit">Надіслати скаргу</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+/* Messages */
+.messages-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 3000;
+    max-width: 400px;
+}
+
+.alert {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    margin-bottom: 10px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    animation: slideInRight 0.3s ease-out;
+}
+
+.alert-success {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.alert-error {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.alert-close {
+    background: none;
+    border: none;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    color: inherit;
+    opacity: 0.7;
+    margin-left: 10px;
+}
+
+.alert-close:hover {
+    opacity: 1;
+}
+
+@keyframes slideInRight {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+/* Form errors */
+.form-errors {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+    border-radius: 6px;
+    padding: 12px;
+    margin-bottom: 16px;
+}
+
+.field-error {
+    color: #dc3545;
+    font-size: 12px;
+    margin-top: 4px;
+    display: none;
+}
+
+.field-error.show {
+    display: block;
+}
+
+.form-group textarea.error,
+.form-group input.error {
+    border-color: #dc3545;
+    box-shadow: 0 0 0 2px rgba(220, 53, 69, 0.1);
+}
+
+/* Відступ для сайдбару */
+.profile-page {
+    margin-left: 250px;
+    padding: 20px;
+    max-width: 900px;
+}
+
+.profile-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 30px;
+    margin-bottom: 30px;
+    padding-bottom: 30px;
+    border-bottom: 1px solid #dbdbdb;
+}
+
+.avatar {
+    flex-shrink: 0;
+}
+
+.avatar img {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #dbdbdb;
+}
+
+.default-avatar {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    background-color: #f3f4f6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid #dbdbdb;
+}
+
+.profile-info {
+    flex-grow: 1;
+}
+
+.profile-header-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 15px;
+    width: 100%;
+}
+
+.profile-actions {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.profile-info h2 {
+    margin: 0;
+    font-size: 28px;
+    font-weight: 300;
+    color: #262626;
+}
+
+.profile-info .bio {
+    color: #262626;
+    margin: 10px 0 15px 0;
+    line-height: 1.5;
+    font-size: 16px;
+}
+
+.profile-stats {
+    display: flex;
+    gap: 40px;
+    font-size: 16px;
+    color: #262626;
+}
+
+.profile-stats div {
+    cursor: pointer;
+}
+
+.profile-stats strong {
+    font-weight: 600;
+}
+
+.profile-stats div:hover {
+    color: #8e8e8e;
+}
+
+/* Disabled buttons */
+.btn-follow-disabled, .block-btn-disabled {
+    background: #dbdbdb;
+    color: #8e8e8e;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: not-allowed;
+    min-width: 120px;
+    opacity: 0.6;
+}
+
+/* Dropdown Menu */
+.dropdown-menu {
+    position: relative;
+}
+
+.menu-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s;
+    color: #262626;
+}
+
+.menu-btn:hover {
+    background-color: #f5f5f5;
+}
+
+.dropdown-content {
+    display: none;
+    position: absolute;
+    right: 0;
+    top: 100%;
+    background-color: white;
+    min-width: 200px;
+    box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+    border-radius: 8px;
+    z-index: 1000;
+    border: 1px solid #dbdbdb;
+    overflow: hidden;
+}
+
+.dropdown-content.show {
+    display: block;
+    animation: dropdownFade 0.2s ease-out;
+}
+
+@keyframes dropdownFade {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 12px 16px;
+    border: none;
+    background: none;
+    text-align: left;
+    cursor: pointer;
+    font-size: 14px;
+    color: #262626;
+    transition: background-color 0.2s;
+}
+
+.dropdown-item:hover {
+    background-color: #f5f5f5;
+}
+
+.dropdown-item.report-btn:hover {
+    background-color: #fef2f2;
+    color: #dc2626;
+}
+
+.dropdown-item.block-btn-disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+    color: #8e8e8e;
+}
+
+.dropdown-item.block-btn-disabled:hover {
+    background-color: transparent;
+}
+
+.dropdown-item:not(:last-child) {
+    border-bottom: 1px solid #efefef;
+}
+
+/* Private profile notice */
+.private-notice {
+    text-align: center;
+    padding: 40px 20px;
+    color: #8e8e8e;
+    background: #fafafa;
+    border-radius: 10px;
+    margin-top: 20px;
+}
+
+.private-notice h3 {
+    margin: 10px 0;
+    font-size: 22px;
+    font-weight: 600;
+    color: #262626;
+}
+
+.private-notice p {
+    margin: 10px 0;
+    font-size: 16px;
+    line-height: 1.4;
+}
+
+/* Posts grid */
+.profile-posts {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.profile-posts .post {
+    position: relative;
+    overflow: hidden;
+    border-radius: 8px;
+}
+
+.profile-posts .post img {
+    width: 100%;
+    aspect-ratio: 1/1;
+    object-fit: cover;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.profile-posts .post:hover img {
+    transform: scale(1.05);
+}
+
+.no-posts {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 60px 20px;
+    color: #8e8e8e;
+    background: #fafafa;
+    border-radius: 10px;
+}
+
+.no-posts p {
+    font-size: 18px;
+    margin: 0;
+    font-weight: 500;
+}
+
+/* Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 2000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+}
+
+.modal.show {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: modalFadeIn 0.3s ease-out;
+}
+
+@keyframes modalFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.modal-content {
+    background-color: white;
+    border-radius: 12px;
+    max-width: 500px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+    from { transform: scale(0.9) translateY(-10px); opacity: 0; }
+    to { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid #efefef;
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: #262626;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #8e8e8e;
+    transition: all 0.2s;
+}
+
+.close-btn:hover {
+    background-color: #f5f5f5;
+    color: #262626;
+}
+
+.modal-body {
+    padding: 24px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #262626;
+    font-size: 14px;
+}
+
+/* Django form field styles */
+.form-group textarea {
+    width: 100%;
+    min-height: 120px;
+    padding: 12px;
+    border: 1px solid #dbdbdb;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 14px;
+    resize: vertical;
+    transition: border-color 0.2s;
+    box-sizing: border-box;
+}
+
+.form-group textarea:focus {
+    outline: none;
+    border-color: #0095f6;
+    box-shadow: 0 0 0 2px rgba(0, 149, 246, 0.1);
+}
+
+.form-group input[type="file"] {
+    width: 100%;
+    padding: 8px;
+    border: 1px dashed #dbdbdb;
+    border-radius: 8px;
+    font-size: 14px;
+    transition: border-color 0.2s;
+    box-sizing: border-box;
+}
+
+.form-group input[type="file"]:hover {
+    border-color: #0095f6;
+}
+
+.file-hint {
+    display: block;
+    margin-top: 6px;
+    font-size: 12px;
+    color: #8e8e8e;
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 16px 24px 24px;
+    border-top: 1px solid #efefef;
+}
+
+.btn-cancel, .btn-submit {
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+}
+
+.btn-cancel {
+    background-color: #f5f5f5;
+    color: #262626;
+}
+
+.btn-cancel:hover {
+    background-color: #efefef;
+}
+
+.btn-submit {
+    background-color: #dc2626;
+    color: white;
+}
+
+.btn-submit:hover {
+    background-color: #b91c1c;
+    transform: translateY(-1px);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .profile-page {
+        margin-left: 0;
+        padding: 10px;
+    }
+
+    .profile-header {
+        flex-direction: column;
+        text-align: center;
+        align-items: center;
+    }
+
+    .profile-header-top {
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .profile-stats {
+        justify-content: center;
+        gap: 30px;
+    }
+
+    .profile-posts {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+    }
+
+    .avatar img, .default-avatar {
+        width: 120px;
+        height: 120px;
+    }
+}
+
+@media (max-width: 480px) {
+    .profile-posts {
+        grid-template-columns: 1fr;
+    }
+
+    .profile-stats {
+        gap: 20px;
+        font-size: 14px;
+    }
+}
+</style>
+
+<script>
+// Dropdown menu functions
+function toggleMenu() {
+    const dropdown = document.getElementById('dropdownContent');
+    dropdown.classList.toggle('show');
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', function(event) {
+    const menu = document.getElementById('menuBtn');
+    const dropdown = document.getElementById('dropdownContent');
+
+    if (!menu.contains(event.target) && !dropdown.contains(event.target)) {
+        dropdown.classList.remove('show');
+    }
+});
+
+// Report modal functions
+function openReportModal() {
+    document.getElementById('reportModal').classList.add('show');
+    document.body.style.overflow = 'hidden';
+    // Close dropdown
+    document.getElementById('dropdownContent').classList.remove('show');
+}
+
+function closeReportModal() {
+    document.getElementById('reportModal').classList.remove('show');
+    document.body.style.overflow = 'auto';
+    // Reset form
+    document.getElementById('reportForm').reset();
+}
+
+// Close modal when clicking outside
+document.getElementById('reportModal').addEventListener('click', function(event) {
+    if (event.target === this) {
+        closeReportModal();
+    }
+});
+
+// Handle form submission with validation
+document.getElementById('reportForm').addEventListener('submit', function(e) {
+    // Clear previous errors
+    clearFormErrors();
+
+    const description = document.getElementById('{{ report_form.description.id_for_label }}').value.trim();
+    const fileInput = document.getElementById('{{ report_form.content.id_for_label }}');
+    let hasErrors = false;
+
+    // Validate description
+    if (!description) {
+        showFieldError('description', 'Опис скарги є обов\'язковим');
+        hasErrors = true;
+    } else if (description.length < 10) {
+        showFieldError('description', 'Опис скарги має містити принаймні 10 символів');
+        hasErrors = true;
+    }
+
+    // Validate file size
+    if (fileInput.files.length > 0) {
+        const file = fileInput.files[0];
+        if (file.size > 10 * 1024 * 1024) { // 10MB
+            showFieldError('content', 'Розмір файлу не повинен перевищувати 10MB');
+            hasErrors = true;
+        }
+    }
+
+    if (hasErrors) {
+        e.preventDefault();
+        return;
+    }
+
+    // Show loading state
+    const submitBtn = document.querySelector('.btn-submit');
+    const originalText = submitBtn.textContent;
+    submitBtn.textContent = 'Надсилання...';
+    submitBtn.disabled = true;
+
+    // Form will submit naturally if no errors
+});
+
+function showFieldError(fieldName, message) {
+    const errorDiv = document.getElementById(fieldName + '-error');
+    const input = document.getElementById('{{ report_form.description.id_for_label }}');
+
+    if (fieldName === 'content') {
+        const fileInput = document.getElementById('{{ report_form.content.id_for_label }}');
+        fileInput.classList.add('error');
+    } else {
+        input.classList.add('error');
+    }
+
+    errorDiv.textContent = message;
+    errorDiv.classList.add('show');
+}
+
+function clearFormErrors() {
+    // Remove error classes
+    document.querySelectorAll('.error').forEach(el => el.classList.remove('error'));
+
+    // Hide error messages
+    document.querySelectorAll('.field-error').forEach(el => {
+        el.classList.remove('show');
+        el.textContent = '';
+    });
+
+    // Hide general error container
+    const formErrors = document.getElementById('form-errors');
+    formErrors.style.display = 'none';
+}
+
+// Auto-hide messages after 5 seconds
+document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(function() {
+        const messages = document.querySelectorAll('.alert');
+        messages.forEach(function(message) {
+            message.remove();
+        });
+    }, 5000);
+});
+</script>
 {% endblock %}

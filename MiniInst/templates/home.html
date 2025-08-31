@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+
+{% block title %}Головна - MiniInst{% endblock %}
+
+{% block content %}
+<div class="main-container" style="display: flex; gap: 20px;">
+
+    <div class="content" style="flex: 1;">
+
+        {% if post %}
+            <div class="post" style="border: 1px solid #ccc; border-radius: 10px; padding: 20px; background: #fff; max-width: 700px; margin: 20px auto;">
+
+                <div class="post-header" style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px;">
+                    {% if post.user.avatar %}
+                        <img src="{{ post.user.avatar.url }}" alt="Аватар" style="width: 50px; height: 50px; border-radius: 50%;">
+                    {% else %}
+                        <div style="width: 50px; height: 50px; border-radius: 50%; background: #ddd;"></div>
+                    {% endif %}
+                    <div>
+                        <strong>{{ post.user.username }}</strong><br>
+                        <small>{{ post.created_at|date:"d M Y H:i" }}</small>
+                    </div>
+                </div>
+
+                <div class="post-body" style="margin-bottom: 15px;">
+                    {% if post.image %}
+                        <img src="{{ post.image.url }}" alt="Post Image" style="width: 100%; border-radius: 10px; margin-bottom: 15px;">
+                    {% endif %}
+                    <p>{{ post.content }}</p>
+                </div>
+            </div>
+        {% else %}
+            <div style="text-align: center; margin: 50px 0; font-size: 18px; color: #555;">
+                На жаль, поки що немає постів 😔
+            </div>
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}

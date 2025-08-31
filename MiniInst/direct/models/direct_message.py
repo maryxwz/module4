@@ -7,6 +7,7 @@ class DirectMessage(models.Model):
     sender = models.ForeignKey('users.CustomUser', on_delete=models.CASCADE, related_name='sent_direct_messages')
     message = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
+    edited = models.BooleanField(default=False)
 
     def __str__(self):
         return f"{self.sender}: {self.message[:20]}"
