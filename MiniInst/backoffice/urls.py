@@ -12,5 +12,10 @@ urlpatterns = [
         'settings/',
         views.settings,
         name='settings'
-    )
+    ),
+    path(
+        'report/<str:username>/',
+        views.report_user,
+        name='report_user'
+    ),
 ]
