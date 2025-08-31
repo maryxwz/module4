@@ -1,8 +1,8 @@
-<!DOCTYPE html>
-<html lang="uk">
-<head>
-    <meta charset="UTF-8">
-    <title>Мої історії</title>
+{% extends 'base.html' %}
+
+{% block title %} Мої історії {% endblock title %}
+
+{% block content %}
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -63,7 +63,10 @@
         }
     </style>
 </head>
-<body>
+
+
+
+
 
 <h2>Мої історії</h2>
 
@@ -106,5 +109,7 @@
     {% endif %}
 </div>
 
-</body>
-</html>
+{% endblock content %}
+
+
+

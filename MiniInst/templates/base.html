@@ -1,0 +1,42 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}MiniInst{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+</head>
+<body>
+    <aside class="sidebar">
+        <div class="logo">MiniInst</div>
+        <nav>
+            <a href="#">🏠 Головна</a>
+            <a href="#">🔍 Пошук</a>
+            <a href="#">⭐ Цікаве</a>
+            <a href="#">🎬 Reels</a>
+            <a href="#">💬 Повідомлення</a>
+            <a href="#">❤️ Сповіщення</a>
+            <a href="#">➕ Створити</a>
+            <a href="#">👤 Профіль</a>
+        </nav>
+        <div class="bottom">
+            <a href="#">☰ Ще</a>
+            <a href="#">📦 Інші продукти</a>
+        </div>
+    </aside>
+
+    <div class="content">
+        <header>
+            <div class="logo">MiniInst</div>
+        </header>
+
+        <main>
+            {% block content %}{% endblock %}
+        </main>
+
+        <footer>
+            <p>© 2025 MiniInst</p>
+        </footer>
+    </div>
+</body>
+</html>

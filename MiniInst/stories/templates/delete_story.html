@@ -1,10 +1,9 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Delete story</title>
-</head>
-<body> 
+{% extends 'base.html' %}
+
+    {% block title %} Delete story {% endblock title %}
+
+{% block content %}
+
  <h2>Видалити історію</h2>
 
   {% if story.author != user %}
@@ -19,5 +18,5 @@
       <a href="{% url 'all_stories' %}">Скасувати</a>
     </form>
   {% endif %}
-</body>
-</html>
+
+{% endblock content %}

@@ -35,4 +35,3 @@ def search_view(request):
         "search/search.html",
         {"q": q, "exact_user": exact_user, "suggestions": suggestions},
     )
-
