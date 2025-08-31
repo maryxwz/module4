@@ -7,6 +7,7 @@ from django.urls import reverse_lazy
 from django.contrib.auth import views as auth_views
 from django.core.exceptions import PermissionDenied, ObjectDoesNotExist
 
+from backoffice.forms import UserReportForm
 from .forms import CustomUserCreationForm
 from .models.follow import Follow
 from .models.custom_user import CustomUser
@@ -74,14 +75,20 @@ def profile_view(request, username):
     followers_count = profile_user.followers.count() if can_view_details else 0
     following_count = profile_user.following.count() if can_view_details else 0
 
+    if request.method == "POST":
+        report_form = UserReportForm(request.POST, request.FILES)
+    else:
+        report_form = UserReportForm()
+
     context = {
-        'profile_user': profile_user,
-        'is_following': is_following,
-        'can_view_details': can_view_details,
-        'posts': posts,
-        'posts_count': posts_count,
-        'followers_count': followers_count,
-        'following_count': following_count,
+        "profile_user": profile_user,
+        "is_following": is_following,
+        "can_view_details": can_view_details,
+        "posts": posts,
+        "posts_count": posts_count,
+        "followers_count": followers_count,
+        "following_count": following_count,
+        "report_form": report_form,
     }
 
     return render(request, 'profile.html', context)
