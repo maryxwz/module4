@@ -2,7 +2,7 @@ import os
 
 from django import forms
 
-from .models.story import Story, Reels
+from .models.story import Story
 
 
 class StoriesForms(forms.ModelForm):
@@ -19,8 +19,5 @@ class StoriesForms(forms.ModelForm):
         return content
 
 
-class ReelsForms(forms.ModelForm):
-    class Meta:
-        model = Reels
-        fields = ['content', 'bio']
+
 

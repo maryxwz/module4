@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     "recommendations.apps.RecommendationsConfig",
     "search.apps.SearchConfig",
     "backoffice.apps.BackofficeConfig",
+    "reels.apps.ReelsConfig",
 ]
 
 MIDDLEWARE = [

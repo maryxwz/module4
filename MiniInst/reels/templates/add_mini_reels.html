@@ -1,0 +1,106 @@
+{% extends 'base.html' %}
+
+{% block title %} Створення Reels {% endblock title %}
+
+{% block content %}
+<style>
+.reels-card {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+h1 {
+    font-size: 1.8rem;
+    font-weight: 600;
+    color: #333;
+}
+.reels-form input,
+.reels-form textarea {
+    width: 100%;
+    padding: 0.6rem 0.8rem;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    margin-top: 0.3rem;
+}
+.reels-form input:focus,
+.reels-form textarea:focus {
+    border-color: #2563eb;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+}
+.form-label {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #555;
+    margin-bottom: 0.2rem;
+}
+.btn {
+    padding: 0.6rem 1.2rem;
+    font-size: 0.95rem;
+    border-radius: 8px;
+    font-weight: 500;
+}
+.btn-primary {
+    background-color: #2563eb;
+    border-color: #2563eb;
+}
+.btn-primary:hover {
+    background-color: #1d4ed8;
+    border-color: #1d4ed8;
+}
+.btn-outline-secondary {
+    border-color: #d1d5db;
+    color: #374151;
+}
+.btn-outline-secondary:hover {
+    background-color: #f3f4f6;
+}
+.error-message {
+    font-size: 0.85rem;
+    color: #dc2626;
+    margin-top: 0.3rem;
+}
+</style>
+
+<div class="container mt-4">
+    <h1 class="text-center mb-4">Додати новий Reels</h1>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <form method="post" enctype="multipart/form-data" class="reels-card">
+                {% csrf_token %}
+                <div class="reels-form">
+                    <label class="form-label">Відео</label>
+                    {{ form.content }}
+                    {% if form.content.errors %}
+                        <div class="error-message">
+                            {{ form.content.errors }}
+                        </div>
+                    {% endif %}
+
+                    <label class="form-label mt-3">Опис</label>
+                    {{ form.bio }}
+                    {% if form.bio.errors %}
+                        <div class="error-message">
+                            {{ form.bio.errors }}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="d-flex justify-content-between mt-4">
+                    <button type="submit" class="btn btn-primary">Додати Reels</button>
+                    <a href="{% url 'all_reels' %}" class="btn btn-outline-secondary">Скасувати</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+
+{% endblock content %}
+
+

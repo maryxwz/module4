@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+
+{% block title %} Мої Reels {% endblock title %}
+
+{% block content %}
+<div class="reels container mt-4">
+     {% if reels %}
+        <div class="row">
+            {% for reel in reels %}
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card h-100 shadow-sm">
+                        {% if reel.content %}
+                            {% with filename=reel.content.name|lower %}
+                                {% if filename|slice:"-4:" == ".mp4" or filename|slice:"-4:" == ".avi" or filename|slice:"-4:" == ".ogg" %}
+                                    <video class="card-img-top" controls>
+                                        <source src="{{ reel.content.url }}" type="video/{{ filename|slice:"-3:" }}">
+                                        Your browser does not support the video tag.
+                                    </video>
+                                {% endif %}
+                            {% endwith %}
+                        {% endif %}
+                        <div class="card-body">
+                            {% if reel.bio %}
+                                <p class="card-text">{{ reel.bio }}</p>
+                            {% endif %}
+                            <small class="text-muted">{{ reel.created_at|date:"d.m.Y H:i" }}</small>
+
+                            <form method="post" action="{% url 'delete_reel' reel.pk %}" class="mt-2">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-danger btn-sm">Видалити</button>
+                            </form>
+
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p class="text-center">Немає активних Reels</p>
+    {% endif %}
+</div>
+{% endblock content %}
+
