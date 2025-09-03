@@ -31,6 +31,7 @@ urlpatterns = [
     path("search/", include("search.urls"), name='search'),
     path("stories/", include("stories.urls"), name='stories'),
     path("users/", include("users.urls"), name='users'),
+    path('posts/', include('posts.urls')),
     path("reels/", include("reels.urls")),
 ]
 

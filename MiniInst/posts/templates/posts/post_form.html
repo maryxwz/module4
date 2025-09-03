@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>
+        {% if form.instance.pk %}
+            Редактировать пост: {{ form.instance.title|default:"(Без названия)" }}
+        {% else %}
+            Создать пост
+        {% endif %}
+    </title>
+</head>
+<body>
+    <h1>
+        {% if form.instance.pk %}
+            Редактировать пост: {{ form.instance.title|default:"(Без названия)" }}
+        {% else %}
+            Создать пост
+        {% endif %}
+    </h1>
+
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <p>
+            Название:<br>
+            {{ form.title }}
+        </p>
+        <p>
+            Картинка:<br>
+            {{ form.image }}
+        </p>
+        <p>
+            Описание:<br>
+            {{ form.caption }}
+        </p>
+
+        <button type="submit">Сохранить</button>
+    </form>
+
+    <p><a href="{% url 'post_list' %}">⬅ Назад ко всем постам</a></p>
+</body>
+</html>
