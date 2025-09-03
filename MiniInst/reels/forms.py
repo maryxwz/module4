@@ -20,7 +20,7 @@ class ReelsForms(forms.ModelForm):
         content = self.cleaned_data['content']
         file_extension = os.path.splitext(content.name)[1].lower()
         content_size = content.size
-        allowed_extensions = [".mp4", ".avi", "ogg", "mov", "wmv", "flv", "mkv", "mpg", "mpeg"]
+        allowed_extensions = [".mp4", ".avi", ".ogg", ".MOV", ".wmv", ".flv", ".mkv", ".mpg", ".mpeg"]
         if file_extension not in allowed_extensions:
             raise forms.ValidationError("Тип вашого файлу не підходить під умови форми")
         if content_size > max_cont_size:
