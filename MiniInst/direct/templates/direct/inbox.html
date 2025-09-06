@@ -1,18 +1,48 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="uk">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Inbox</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-<div class="max-w-md mx-auto mt-8">
+<body class="bg-gray-50">
+<div class="max-w-2xl mx-auto mt-8 px-4">
   <h1 class="text-2xl font-bold mb-4">Inbox</h1>
-  <ul>
+
+  <div class="mb-4">
+    <label for="chat-search" class="sr-only">Пошук чатів</label>
+    <div class="relative">
+      <input id="chat-search"
+             name="q"
+             value="{{ search_query }}"
+             placeholder="Пошук чатів..."
+             autocomplete="off"
+             class="w-full border rounded-full py-3 px-12 pr-10 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 transition"
+             aria-label="Пошук чатів" />
+      <div class="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="6"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+      </div>
+
+      <button id="clear-search" title="Очистити пошук" type="button"
+              class="absolute right-3 top-1/2 -translate-y-1/2 opacity-0 pointer-events-none transition-opacity p-1 rounded-full hover:bg-gray-200"
+              aria-label="Очистити пошук">
+        <svg class="h-4 w-4 text-gray-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+    <noscript class="text-sm text-gray-500 mt-2 block">JavaScript вимкнено — використайте стандартну форму пошуку.</noscript>
+  </div>
+
+  <ul id="conversations-list" class="space-y-2">
     {% for c in conversations %}
-      <li class="border rounded p-4 mb-2 hover:bg-gray-100">
-        <a href="{% url 'direct:thread' c.kind c.id %}" class="flex items-center space-x-4">
+      <li class="bg-white border rounded p-3 flex items-center justify-between shadow-sm" data-kind="{{ c.kind }}" data-id="{{ c.id }}">
+        <a href="{% url 'direct:thread' c.kind c.id %}" class="flex items-center space-x-4 flex-1">
           <div class="flex-shrink-0">
             {% if c.kind == 'direct' %}
               {% with other=c.other %}
@@ -25,31 +55,214 @@
                 {% endif %}
               {% endwith %}
             {% else %}
-              <!-- group avatar / initial -->
               <div class="h-10 w-10 rounded-full bg-indigo-400 flex items-center justify-center text-white font-bold">
                 {{ c.title|slice:":1"|upper }}
               </div>
             {% endif %}
           </div>
 
-          <div>
-            <p class="font-semibold">
+          <div class="min-w-0">
+            <p class="font-semibold truncate">
               {% if c.kind == 'direct' %}
                 {{ c.other.username }}
               {% else %}
                 {{ c.title }}
               {% endif %}
             </p>
-            <p class="text-sm text-gray-500">
+            <p class="text-sm text-gray-500 truncate">
               {% if c.created_at %}{{ c.created_at|date:"M d, Y H:i" }}{% endif %}
             </p>
           </div>
         </a>
+
+        <div class="ml-3 flex items-center space-x-2">
+          <button type="button" class="pin-btn p-2 rounded hover:bg-gray-100" aria-pressed="{{ c.pinned|yesno:'true,false' }}">
+            {% if c.pinned %}
+              <svg class="h-5 w-5 text-yellow-500" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.958a1 1 0 00.95.69h4.162c.969 0 1.371 1.24.588 1.81l-3.37 2.448a1 1 0 00-.364 1.118l1.286 3.958c.3.921-.755 1.688-1.54 1.118L10 13.347l-3.786 2.68c-.785.57-1.84-.197-1.54-1.118l1.286-3.958a1 1 0 00-.364-1.118L2.422 9.385c-.783-.57-.38-1.81.588-1.81h4.162a1 1 0 00.95-.69l1.286-3.958z" />
+              </svg>
+            {% else %}
+              <svg class="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.958a1 1 0 00.95.69h4.162c.969 0 1.371 1.24.588 1.81l-3.37 2.448a1 1 0 00-.364 1.118l1.286 3.958c.3.921-.755 1.688-1.54 1.118L10 13.347l-3.786 2.68c-.785.57-1.84-.197-1.54-1.118l1.286-3.958a1 1 0 00-.364-1.118L2.422 9.385c-.783-.57-.38-1.81.588-1.81h4.162a1 1 0 00.95-.69l1.286-3.958z" />
+              </svg>
+            {% endif %}
+          </button>
+        </div>
       </li>
     {% empty %}
       <li class="text-gray-500">Немає чатів</li>
     {% endfor %}
   </ul>
 </div>
+
+<script>
+  function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+      const cookies = document.cookie.split(';');
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  }
+  const csrftoken = getCookie('csrftoken');
+
+  function debounce(fn, wait) {
+    let t = null;
+    return function(...args) {
+      clearTimeout(t);
+      t = setTimeout(() => fn.apply(this, args), wait);
+    };
+  }
+
+  async function performSearch(query, replaceHistory = true) {
+    const url = new URL(window.location.href);
+    if (query) url.searchParams.set('q', query);
+    else url.searchParams.delete('q');
+
+    try {
+      const resp = await fetch(url.toString(), {
+        method: 'GET',
+        credentials: 'same-origin',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+      });
+      if (!resp.ok) throw new Error('Network error');
+
+      const html = await resp.text();
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, 'text/html');
+      const newList = doc.getElementById('conversations-list');
+      const currentList = document.getElementById('conversations-list');
+
+      if (newList && currentList) {
+        currentList.innerHTML = newList.innerHTML;
+        attachPinHandlers();
+      }
+
+      if (replaceHistory) {
+        if (query) history.replaceState(null, '', url.toString());
+        else history.replaceState(null, '', window.location.pathname);
+      }
+
+      updateClearButtonVisibility(query);
+    } catch (e) {
+      console.error('Search failed', e);
+    }
+  }
+
+  const searchInput = document.getElementById('chat-search');
+  const clearBtn = document.getElementById('clear-search');
+
+  function updateClearButtonVisibility(value) {
+    if (value && value.length > 0) {
+      clearBtn.style.opacity = '1';
+      clearBtn.style.pointerEvents = 'auto';
+    } else {
+      clearBtn.style.opacity = '0';
+      clearBtn.style.pointerEvents = 'none';
+    }
+  }
+
+  function attachPinHandlers() {
+    document.querySelectorAll('.pin-btn').forEach(btn => {
+      btn.replaceWith(btn.cloneNode(true));
+    });
+
+    document.querySelectorAll('.pin-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        const li = e.currentTarget.closest('li');
+        const kind = li.getAttribute('data-kind');
+        const id = li.getAttribute('data-id');
+
+        const form = new FormData();
+        form.append('kind', kind);
+        form.append('id', id);
+
+        try {
+          const resp = await fetch("{% url 'direct:toggle_pin' %}", {
+            method: 'POST',
+            headers: {'X-CSRFToken': csrftoken},
+            body: form,
+            credentials: 'same-origin'
+          });
+          if (!resp.ok) throw new Error('Network error');
+          const data = await resp.json();
+
+          const btnEl = li.querySelector('.pin-btn');
+          btnEl.setAttribute('aria-pressed', data.pinned ? 'true' : 'false');
+
+          if (data.pinned) {
+            btnEl.innerHTML = `
+              <svg class="h-5 w-5 text-yellow-500" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.958a1 1 0 00.95.69h4.162c.969 0 1.371 1.24.588 1.81l-3.37 2.448a1 1 0 00-.364 1.118l1.286 3.958c.3.921-.755 1.688-1.54 1.118L10 13.347l-3.786 2.68c-.785.57-1.84-.197-1.54-1.118l1.286-3.958a1 1 0 00-.364-1.118L2.422 9.385c-.783-.57-.38-1.81.588-1.81h4.162a1 1 0 00.95-.69l1.286-3.958z" />
+              </svg>`;
+            const list = document.getElementById('conversations-list');
+            const items = Array.from(list.children);
+            let insertBeforeEl = null;
+            for (const item of items) {
+              const pBtn = item.querySelector('.pin-btn');
+              if (!pBtn) continue;
+              if (pBtn.getAttribute('aria-pressed') === 'false') {
+                insertBeforeEl = item;
+                break;
+              }
+            }
+            if (insertBeforeEl) list.insertBefore(li, insertBeforeEl);
+            else list.prepend(li);
+          } else {
+            btnEl.innerHTML = `
+              <svg class="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.958a1 1 0 00.95.69h4.162c.969 0 1.371 1.24.588 1.81l-3.37 2.448a1 1 0 00-.364 1.118l1.286 3.958c.3.921-.755 1.688-1.54 1.118L10 13.347l-3.786 2.68c-.785.57-1.84-.197-1.54-1.118l1.286-3.958a1 1 0 00-.364-1.118L2.422 9.385c-.783-.57-.38-1.81.588-1.81h4.162a1 1 0 00.95-.69l1.286-3.958z" />
+              </svg>`;
+            const list = document.getElementById('conversations-list');
+            const items = Array.from(list.children);
+            let lastPinned = null;
+            for (const item of items) {
+              const pBtn = item.querySelector('.pin-btn');
+              if (!pBtn) continue;
+              if (pBtn.getAttribute('aria-pressed') === 'true') lastPinned = item;
+            }
+            if (lastPinned && lastPinned !== li) list.insertBefore(li, lastPinned.nextSibling);
+            else list.appendChild(li);
+          }
+
+        } catch (err) {
+          console.error(err);
+          alert('Не вдалося змінити стан закріплення. Спробуйте пізніше.');
+        }
+      });
+    });
+  }
+
+  attachPinHandlers();
+
+  const debouncedSearch = debounce((val) => performSearch(val), 250);
+  searchInput.addEventListener('input', (e) => {
+    const val = e.target.value.trim();
+    debouncedSearch(val);
+  });
+
+  clearBtn.addEventListener('click', (e) => {
+    searchInput.value = '';
+    performSearch('', true);
+    searchInput.focus();
+  });
+
+  updateClearButtonVisibility(searchInput.value.trim());
+
+  searchInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      searchInput.value = '';
+      performSearch('', true);
+    }
+  });
+</script>
 </body>
 </html>

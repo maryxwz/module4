@@ -2,37 +2,113 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 from django.core.paginator import Paginator
-from django.http import JsonResponse
-from .models import Direct, DirectMessage, GroupChat, GroupMessage
+from django.http import JsonResponse, HttpResponseBadRequest
+from .models import Direct, DirectMessage, GroupChat, GroupMessage, PinnedConversation
+from django.contrib.contenttypes.models import ContentType
+from django.views.decorators.http import require_POST
+
 
 @login_required
 def inbox(request):
-    directs_qs = Direct.objects.filter(Q(user1=request.user) | Q(user2=request.user)).order_by('-created_at')
+    q = (request.GET.get('q') or '').strip()
 
-    directs = []
+    directs_qs = Direct.objects.filter(Q(user1=request.user) | Q(user2=request.user))
+    groups_qs = GroupChat.objects.filter(members=request.user)
+
+    if q:
+        directs_qs = directs_qs.filter(
+            Q(user1__username__icontains=q) | Q(user2__username__icontains=q)
+        )
+        groups_qs = groups_qs.filter(name__icontains=q)
+
+    directs_qs = directs_qs.order_by('-created_at').select_related('user1', 'user2')
+    groups_qs = groups_qs.order_by('-created_at')
+
+    conversations = []
+    direct_ct = ContentType.objects.get_for_model(Direct)
+    group_ct = ContentType.objects.get_for_model(GroupChat)
+
+    pinned_direct_ids = set(
+        PinnedConversation.objects.filter(user=request.user, content_type=direct_ct)
+        .values_list('object_id', flat=True)
+    )
+    pinned_group_ids = set(
+        PinnedConversation.objects.filter(user=request.user, content_type=group_ct)
+        .values_list('object_id', flat=True)
+    )
+    pinned_map = {}
+    for p in PinnedConversation.objects.filter(user=request.user):
+        pinned_map[(p.content_type_id, str(p.object_id))] = p.pinned_at
+
     for chat in directs_qs:
         other = chat.get_receiver(request.user)
-        directs.append({
+        conv_id = str(chat.id)
+        ct_id = direct_ct.id
+        pinned = (chat.id in pinned_direct_ids)
+        conversations.append({
             'kind': 'direct',
-            'id': chat.id,
-            'title': other.username,
+            'id': conv_id,
+            'title': other.username if other else '',
             'other': other,
             'created_at': chat.created_at,
+            'pinned': pinned,
+            'pinned_at': pinned_map.get((ct_id, conv_id)),
         })
 
-    groups_qs = GroupChat.objects.filter(members=request.user).order_by('-created_at')
-    groups = []
     for g in groups_qs:
-        groups.append({
+        conv_id = str(g.id)
+        ct_id = group_ct.id
+        pinned = (g.id in pinned_group_ids)
+        conversations.append({
             'kind': 'group',
-            'id': g.id,
+            'id': conv_id,
             'title': g.name or 'Груповий чат',
             'group': g,
             'created_at': g.created_at,
+            'pinned': pinned,
+            'pinned_at': pinned_map.get((ct_id, conv_id)),
         })
 
-    conversations = sorted(directs + groups, key=lambda x: x['created_at'] or 0, reverse=True)
-    return render(request, 'direct/inbox.html', {'conversations': conversations})
+    pinned = sorted([c for c in conversations if c['pinned']],
+                    key=lambda x: x['pinned_at'] or 0, reverse=True)
+    not_pinned = sorted([c for c in conversations if not c['pinned']],
+                        key=lambda x: x['created_at'] or 0, reverse=True)
+    conversations_sorted = pinned + not_pinned
+
+    return render(request, 'direct/inbox.html', {
+        'conversations': conversations_sorted,
+        'search_query': q,
+    })
+
+
+@require_POST
+@login_required
+def toggle_pin(request):
+    kind = request.POST.get('kind')
+    obj_id = request.POST.get('id')
+    if kind not in ('direct', 'group') or not obj_id:
+        return HttpResponseBadRequest("Invalid parameters")
+
+    if kind == 'direct':
+        model = Direct
+    else:
+        model = GroupChat
+
+    try:
+        # validate existence
+        obj = get_object_or_404(model, id=obj_id)
+    except Exception:
+        return HttpResponseBadRequest("Object not found")
+
+    ct = ContentType.objects.get_for_model(model)
+    pin_qs = PinnedConversation.objects.filter(user=request.user, content_type=ct, object_id=obj_id)
+    if pin_qs.exists():
+        pin_qs.delete()
+        return JsonResponse({'pinned': False})
+    else:
+        PinnedConversation.objects.create(user=request.user, content_type=ct, object_id=obj_id)
+        return JsonResponse({'pinned': True})  
+    
 
 @login_required
 def thread_view(request, kind, chat_id):
