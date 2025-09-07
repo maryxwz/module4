@@ -14,6 +14,7 @@ class CustomUserAdmin(admin.ModelAdmin):
         "is_private",
         "is_staff",
         "is_active",
+        "is_banned",
     )
     list_display_links = (
         "id",
@@ -29,6 +30,7 @@ class CustomUserAdmin(admin.ModelAdmin):
         "is_private",
         "is_staff",
         "is_active",
+        "is_banned",
     )
     search_fields = (
         'id',
