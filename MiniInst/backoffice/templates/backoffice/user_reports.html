@@ -1,86 +1,6 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>User Reports</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f5f6fa;
-            margin: 0;
-            padding: 0;
-        }
-        h1 {
-            padding: 20px;
-            background-color: #2f3640;
-            color: white;
-            margin: 0;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            background: white;
-            margin: 20px auto;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-        th, td {
-            padding: 12px 15px;
-            border-bottom: 1px solid #ddd;
-            text-align: left;
-        }
-        th {
-            background-color: #40739e;
-            color: white;
-        }
-        tr:hover {
-            background-color: #f1f2f6;
-        }
-        .status-archived {
-            color: gray;
-            font-style: italic;
-        }
-        .status-active {
-            color: #44bd32;
-            font-weight: bold;
-        }
-        a {
-            color: #0984e3;
-            text-decoration: none;
-        }
-        a:hover {
-            text-decoration: underline;
-        }
-        .report-count {
-            font-weight: bold;
-            padding: 4px 8px;
-            border-radius: 4px;
-            background-color: #f1f2f6;
-        }
-        .report-count.high {
-            background-color: #ff6b6b;
-            color: white;
-        }
-        .block-btn {
-            background-color: #e74c3c;
-            color: white;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 12px;
-        }
-        .block-btn:hover {
-            background-color: #c0392b;
-        }
-        .blocked-user {
-            color: #7f8c8d;
-            font-style: italic;
-        }
-    </style>
-</head>
-<body>
-
-<h1>📢 User Reports</h1>
+{% extends "base.html" %}
+{% block title %}Жалоби{% endblock %}
+{% block content %}
 
 <table>
     <thead>
@@ -154,5 +74,58 @@
     </tbody>
 </table>
 
-</body>
-</html>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            margin: 20px auto;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        th, td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #ddd;
+            text-align: left;
+        }
+        th {
+            background-color: #40739e;
+            color: white;
+        }
+        tr:hover {
+            background-color: #f1f2f6;
+        }
+        a {
+            color: #0984e3;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        .report-count {
+            font-weight: bold;
+            padding: 4px 8px;
+            border-radius: 4px;
+            background-color: #f1f2f6;
+        }
+        .report-count.high {
+            background-color: #ff6b6b;
+            color: white;
+        }
+        .block-btn {
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .block-btn:hover {
+            background-color: #c0392b;
+        }
+        .blocked-user {
+            color: #7f8c8d;
+            font-style: italic;
+        }
+    </style>
+{% endblock %}
