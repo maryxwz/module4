@@ -91,7 +91,7 @@ header .logo {
 
 
 main {
-    max-width: 800px;
+    width: auto;
     margin: 30px auto;
     padding: 0 15px;
     display: flex;
