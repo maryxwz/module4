@@ -7,13 +7,20 @@ from django.contrib.auth.decorators import login_required
 from django.urls import reverse_lazy
 from django.contrib.auth import views as auth_views
 from django.core.exceptions import PermissionDenied, ObjectDoesNotExist
+from django.views.decorators.http import require_POST
+from django.contrib.auth import get_user_model
 
 from backoffice.forms import UserReportForm
 from .forms import CustomUserCreationForm
 from .models.follow import Follow
 from .models.custom_user import CustomUser
+from .models.block import Block
 from posts.models.post import Post
 from stories.models.story import Story
+
+
+
+UserModel = get_user_model()
 
 
 class CustomLoginView(auth_views.LoginView):
@@ -66,11 +73,16 @@ def profile_view(request, username):
         following=profile_user
     ).exists()
 
+    is_blocked_by_me = Block.objects.filter(blocker=current_user, blocked=profile_user).exists()
+    blocked_me = Block.objects.filter(blocker=profile_user, blocked=current_user).exists()
+    blocked_between = is_blocked_by_me or blocked_me
+
     can_view_details = (
-            current_user == profile_user or
-            not profile_user.is_private or
-            is_following
+        current_user == profile_user or
+        not profile_user.is_private or
+        is_following
     )
+    can_view_details = can_view_details and not blocked_between
 
     posts = []
     posts_count = 0
@@ -95,6 +107,26 @@ def profile_view(request, username):
         "followers_count": followers_count,
         "following_count": following_count,
         "report_form": report_form,
+        "is_blocked_by_me": is_blocked_by_me,
+        "blocked_between": blocked_between,
     }
 
     return render(request, 'profile.html', context)
+
+
+@login_required
+@require_POST
+def block_user_view(request, username):
+    target = get_object_or_404(UserModel, username=username)
+    if target.id != request.user.id:
+        Block.objects.get_or_create(blocker=request.user, blocked=target)
+    return redirect('profile', username=target.username)
+
+
+@login_required
+@require_POST
+def unblock_user_view(request, username):
+    target = get_object_or_404(UserModel, username=username)
+    if target.id != request.user.id:
+        Block.objects.filter(blocker=request.user, blocked=target).delete()
+    return redirect('profile', username=target.username)

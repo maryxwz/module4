@@ -1,5 +1,6 @@
 from django.contrib import admin
 from users.models import CustomUser, Follow
+from users.models import Block
 
 
 @admin.register(CustomUser)
@@ -62,5 +63,20 @@ class FollowAdmin(admin.ModelAdmin):
         "id",
         "follower",
         "following",
+        "created_at",
+    )
+@admin.register(Block)
+class BlockAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "blocker",
+        "blocked",
+        "created_at"
+    )
+    search_fields = (
+        "blocker__username",
+        "blocked__username"
+    )
+    list_filter = (
         "created_at",
     )
