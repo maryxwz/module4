@@ -6,7 +6,7 @@ from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse_lazy
 from django.contrib.auth import views as auth_views
-from django.core.exceptions import PermissionDenied, ObjectDoesNotExist
+from django.core.exceptions import ObjectDoesNotExist
 from django.views.decorators.http import require_POST
 from django.contrib.auth import get_user_model
 
@@ -37,6 +37,17 @@ def home_view(request):
     for story in all_stories:
         if story.author.is_private:
             all_stories.remove(story)
+    if request.user.is_authenticated:
+        blocked_ids = set(
+            Block.objects.filter(blocker=request.user).values_list('blocked_id', flat=True)
+        )
+        blocked_me_ids = set(
+            Block.objects.filter(blocked=request.user).values_list('blocker_id', flat=True)
+        )
+        banned_user_ids = blocked_ids.union(blocked_me_ids)
+        if banned_user_ids:
+            all_posts = all_posts.exclude(author_id__in=banned_user_ids)
+
     try:
         profile_user = CustomUser.objects.get(username=request.user.username)
     except ObjectDoesNotExist:
@@ -55,7 +66,7 @@ def register_view(request):
         if form.is_valid():
             user = form.save()
             login(request, user)
-            return redirect('profile',username=request.user.username)
+            return redirect('profile', username=request.user.username)
     else:
         form = CustomUserCreationForm()
     return render(request, 'register.html', {'form': form})
