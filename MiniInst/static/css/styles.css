@@ -63,7 +63,7 @@ body {
 
 
 .content {
-    margin-left: 270px;
+    margin-left: 250px;
     flex: 1;
     display: flex;
     flex-direction: column;
@@ -92,7 +92,7 @@ header .logo {
 
 main {
     max-width: 800px;
-    margin: 30px auto;
+    /* margin: 30px auto; */
     padding: 0 15px;
     display: flex;
     flex-direction: column;
