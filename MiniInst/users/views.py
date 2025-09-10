@@ -1,5 +1,6 @@
 import random
 
+from django.http.response import  Http404
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
@@ -57,7 +58,8 @@ def register_view(request):
 def profile_view(request, username):
     profile_user = get_object_or_404(CustomUser, username=username)
     current_user = request.user
-
+    if profile_user.is_banned:
+        raise Http404("Профіль заблокован")
     # Перевірка чи поточний користувач підписаний на профіль
     is_following = Follow.objects.filter(
         follower=current_user,

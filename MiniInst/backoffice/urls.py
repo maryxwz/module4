@@ -18,4 +18,9 @@ urlpatterns = [
         views.report_user,
         name='report_user'
     ),
+    path(
+        'block-user/<int:user_id>/',
+        views.block_user,
+        name='block_user'
+    ),
 ]

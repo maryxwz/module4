@@ -1,10 +1,7 @@
-<!DOCTYPE html>
-<html lang="uk">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Чат — {% if kind == 'direct' %}{{ other.username }}{% else %}{{ other }}{% endif %}</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+{% extends "base.html" %}
+{% block title %}{% if kind == 'direct' %}{{ other.username }}{% else %}{{ other }}{% endif %}{% endblock %}
+
+{% block content %}
   <style>
     #chat-window::-webkit-scrollbar { display: none; }
     #chat-window { -ms-overflow-style: none; scrollbar-width: none; }
@@ -26,13 +23,12 @@
     #edit-toolbar .text { color: #111827; }
     #edit-toolbar button { background: transparent; border: none; font-weight: 600; cursor: pointer; }
   </style>
-</head>
-<body class="antialiased text-slate-800">
+
   <div class="min-h-screen h-screen w-full flex items-stretch">
     <div class="flex-1 flex flex-col">
       <header class="flex items-center justify-between px-4 py-3 border-b bg-white">
         <div class="flex items-center gap-3">
-          <a href="{% url 'direct:inbox' %}" class="md:hidden p-1 rounded hover:bg-gray-100" aria-label="Назад">
+          <a href="{% url 'direct:inbox' %}" class="p-1 rounded hover:bg-gray-100" aria-label="Назад">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
             </svg>
@@ -345,5 +341,4 @@
   observer.observe(chatWindow, { childList: true, subtree: true });
 })();
 </script>
-</body>
-</html>
+{% endblock %}

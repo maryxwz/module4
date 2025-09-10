@@ -1,13 +1,9 @@
+{% extends "base.html" %}
 {% load static %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <title>Пошук</title>
-  <link rel="stylesheet" href="{% static 'search/search.css' %}">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-</head>
-<body>
+
+{% block content %}
+<link rel="stylesheet" href="{% static 'search/search.css' %}">
+
 <main class="srch">
   <header class="srch__bar">
     <form method="get" action="" class="srch__form">
@@ -16,7 +12,7 @@
         class="srch__input"
         name="q"
         value="{{ q }}"
-        placeholder="Пошук користувачів (введіть @нік або ім’я/прізвище)"
+        placeholder="Пошук користувачів або #хештегів"
         autocomplete="off"
       >
       <button type="submit" class="srch__btn">Знайти</button>
@@ -27,7 +23,7 @@
     {% if q %}
       {% if exact_user %}
         <div class="srch__section">
-          <a class="usercard" href="#">
+          <a class="usercard" href="{% url 'profile' exact_user.username %}">
             {% if exact_user.avatar %}
               <img class="usercard__avatar" src="{{ exact_user.avatar.url }}" alt="@{{ exact_user.username }}">
             {% else %}
@@ -55,7 +51,7 @@
           <ul class="list">
             {% for u in suggestions %}
               <li>
-                <a class="usercard" href="#">
+                <a class="usercard" href="{% url 'profile' u.username %}">
                   {% if u.avatar %}
                     <img class="usercard__avatar" src="{{ u.avatar.url }}" alt="@{{ u.username }}">
                   {% else %}
@@ -74,16 +70,67 @@
               </li>
             {% endfor %}
           </ul>
-        {% else %}
-          <div class="srch__empty">Нічого не знайдено.</div>
         {% endif %}
       </div>
+
+      {% if hashtag_query %}
+        <div class="srch__section">
+          <div class="srch__section-title">Пости з хештегом {{ hashtag_query }}</div>
+
+          {% if hashtag_posts %}
+            <ul class="list">
+              {% for p in hashtag_posts %}
+                <li>
+                  <div class="postcard">
+                    <div class="postcard__meta">
+                      <a class="usercard usercard--inline" href="{% url 'profile' p.author.username %}">
+                        {% if p.author.avatar %}
+                          <img class="usercard__avatar" src="{{ p.author.avatar.url }}" alt="@{{ p.author.username }}">
+                        {% else %}
+                          <div class="usercard__avatar usercard__avatar--placeholder">👤</div>
+                        {% endif %}
+                        <div class="usercard__meta">
+                          <div class="usercard__username">@{{ p.author.username }}</div>
+                        </div>
+                      </a>
+                      <span class="postcard__date">{{ p.created_at|date:"Y-m-d H:i" }}</span>
+                    </div>
+
+                    {% if p.image %}
+                      <div class="postcard__image">
+                        <img src="{{ p.image.url }}" alt="post image">
+                      </div>
+                    {% endif %}
+
+                    {% if p.caption %}
+                      <div class="postcard__caption">
+                        {{ p.caption|truncatechars:160 }}
+                      </div>
+                    {% endif %}
+                  </div>
+                </li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <div class="srch__empty">Пости з {{ hashtag_query }} не знайдено.</div>
+          {% endif %}
+        </div>
+      {% endif %}
+
+      {% if not exact_user and not suggestions and not hashtag_posts %}
+        <div class="srch__empty">Нічого не знайдено.</div>
+      {% endif %}
     {% else %}
-      <div class="srch__hint">Введіть @нік або ім’я/прізвище.</div>
+      <div class="srch__hint">Введіть @нік, ім’я/прізвище або #хештег.</div>
     {% endif %}
   </section>
 </main>
-</body>
-</html>
+{% endblock content %}
+
+
+
+
+
+
 
 

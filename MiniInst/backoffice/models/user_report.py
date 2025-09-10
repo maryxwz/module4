@@ -8,6 +8,12 @@ class UserReport(models.Model):
         related_name='user_reports',
     )
     description = models.TextField(null=False, blank=False)
+    reported_user = models.ForeignKey(
+        to="users.CustomUser",
+        on_delete=models.CASCADE,
+        related_name='reports_against_me',
+        null=True,
+    )
     content = models.FileField(upload_to="user_reports/", null=True, blank=True)
     is_archived = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)

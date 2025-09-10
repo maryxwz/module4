@@ -12,16 +12,48 @@ from users.models import CustomUser
 
 @staff_member_required
 def user_reports_list(request: HttpRequest) -> HttpResponse:
-    reports = UserReport.objects.all().order_by('-created_at')
+    reports = (
+        UserReport.objects.select_related("author", "reported_user")
+        .all()
+        .order_by("-created_at")
+    )
+
+    for report in reports:
+        if report.reported_user:
+            report.reported_user_count = UserReport.objects.filter(
+                reported_user=report.reported_user
+            ).count()
+        else:
+            report.reported_user_count = 0
+
     context = dict(
         reports=reports,
     )
     return render(
         request=request,
-        template_name='backoffice/user_reports.html',
+        template_name="backoffice/user_reports.html",
         context=context,
     )
 
+
+@staff_member_required
+def block_user(request: HttpRequest, user_id: int) -> HttpResponse:
+    if request.method == "POST":
+        user = get_object_or_404(CustomUser, id=user_id)
+
+        reports_count = UserReport.objects.filter(reported_user=user).count()
+
+        if reports_count > 5:
+            user.is_banned = True
+            user.save()
+            messages.success(request, f"Користувач {user.username} заблокован.")
+        else:
+            messages.error(
+                request,
+                f"Недостатньо репортів для блокування користувача {user.username}.",
+            )
+
+    return redirect("user_reports_list")
 
 @login_required
 def settings(request: HttpRequest) -> HttpResponse:
@@ -61,7 +93,7 @@ def report_user(request, username):
         try:
             report = form.save(commit=False)
             report.author = current_user
-            report.description = f"Report to user:{reported_user.username}\n" + report.description
+            report.reported_user = reported_user
             report.save()
 
             messages.success(request, 'Вашу скаргу успішно надіслано. Дякуємо за повідомлення!')
