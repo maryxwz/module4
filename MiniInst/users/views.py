@@ -12,6 +12,8 @@ from .forms import CustomUserCreationForm
 from .models.follow import Follow
 from .models.custom_user import CustomUser
 from posts.models.post import Post
+from stories.models.story import Story
+
 
 class CustomLoginView(auth_views.LoginView):
     def get_success_url(self):
@@ -20,12 +22,13 @@ class CustomLoginView(auth_views.LoginView):
 
 def home_view(request):
     all_posts = list(Post.objects.all())
-
-    if not all_posts:
-        random_post = None
-    else:
-        random_post = random.choice(all_posts)
-
+    for post in all_posts:
+        if post.author.is_private:
+            all_posts.remove(post)
+    all_stories = list(Story.objects.all())
+    for story in all_stories:
+        if story.author.is_private:
+            all_stories.remove(story)
     try:
         profile_user = CustomUser.objects.get(username=request.user.username)
     except ObjectDoesNotExist:
@@ -33,7 +36,8 @@ def home_view(request):
 
     return render(request, 'home.html', {
         'profile_user': profile_user,
-        'post': random_post
+        'posts': all_posts,
+        'stories': all_stories
     })
 
 
