@@ -111,7 +111,12 @@
                 {% endif %}
               </p>
               <p class="text-sm text-gray-500 truncate">
-                {% if c.created_at %}{{ c.created_at|date:"M d, Y H:i" }}{% endif %}
+                {% if c.last_message %}
+                  <span class="font-medium text-gray-700">{{ c.last_message.sender.username }}:</span>
+                  {{ c.last_message.message|default:''|truncatechars:40 }}
+                {% else %}
+                  <span class="italic text-gray-400">Немає повідомлень</span>
+                {% endif %}
               </p>
             </div>
           </a>
