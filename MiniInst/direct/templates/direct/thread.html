@@ -1,83 +1,83 @@
 {% extends "base.html" %}
+{% load static %}
 {% block title %}{% if kind == 'direct' %}{{ other.username }}{% else %}{{ other }}{% endif %}{% endblock %}
 
 {% block content %}
-  <style>
-    #chat-window::-webkit-scrollbar { display: none; }
-    #chat-window { -ms-overflow-style: none; scrollbar-width: none; }
-    .msg-appear { animation: appear .12s ease-out; }
-    @keyframes appear { from { opacity: 0; transform: translateY(6px);} to { opacity:1; transform:none;} }
-    .bubble, #chat-window .max-w-xs { display: inline-block !important; width: auto !important; max-width: min(70%, 680px) !important; padding: 0.5rem 1rem !important; line-height: 1.4 !important; word-break: break-word !important; vertical-align: bottom !important; box-sizing: border-box !important; border-radius: 0.9rem !important; }
-    .bubble-incoming { background: #fff; border: 1px solid #e6e6e6; color: #111827; border-bottom-left-radius: 0.25rem; }
-    .bubble-outgoing { background: #0095f6; color: #fff; border-bottom-right-radius: 0.25rem; }
-    .msg-row { align-items: flex-end; }
-    .chat-input { height: 3rem; }
-    .btn-send { height: 3rem; width: 3rem; min-width: 3rem; display: inline-flex; align-items: center; justify-content: center; }
-    body { background: linear-gradient(180deg,#fafafa 0%, #f3f4f6 100%); }
-    .ctx-menu { position: fixed; z-index: 60; min-width: 120px; background: white; border: 1px solid #e5e7eb; border-radius: 6px; box-shadow: 0 6px 18px rgba(0,0,0,0.08); padding: 6px 0; max-width: 90vw; max-height: 80vh; overflow: auto; }
-    .ctx-menu button { display: block; width: 100%; padding: 8px 12px; text-align: left; font-size: 14px; background: transparent; border: none; }
-    .ctx-menu button:hover { background: #f3f4f6; }
-    .edited-label { font-size: 10px; opacity: 0.8; margin-left: 6px; }
-    .msg-meta { font-size: 11px; margin-top: 4px; }
-    #edit-toolbar { display: none; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 999px; background: #f3f4f6; font-size: 13px; }
-    #edit-toolbar .text { color: #111827; }
-    #edit-toolbar button { background: transparent; border: none; font-weight: 600; cursor: pointer; }
-  </style>
+<style>
+#chat-window::-webkit-scrollbar { display: none; }
+#chat-window { -ms-overflow-style: none; scrollbar-width: none; }
+.msg-appear { animation: appear .12s ease-out; }
+@keyframes appear { from { opacity: 0; transform: translateY(6px);} to { opacity:1; transform:none;} }
+.bubble, #chat-window .max-w-xs { display: inline-block !important; width: auto !important; max-width: min(70%, 680px) !important; padding: 0.5rem 1rem !important; line-height: 1.4 !important; word-break: break-word !important; vertical-align: bottom !important; box-sizing: border-box !important; border-radius: 0.9rem !important; }
+.bubble-incoming { background: #fff; border: 1px solid #e6e6e6; color: #111827; border-bottom-left-radius: 0.25rem; }
+.bubble-outgoing { background: #0095f6; color: #fff; border-bottom-right-radius: 0.25rem; }
+.msg-row { align-items: flex-end; }
+.chat-input { height: 3rem; }
+.btn-send { height: 3rem; width: 3rem; min-width: 3rem; display: inline-flex; align-items: center; justify-content: center; }
+body { background: linear-gradient(180deg,#fafafa 0%, #f3f4f6 100%); }
+.ctx-menu { position: fixed; z-index: 60; min-width: 120px; background: white; border: 1px solid #e5e7eb; border-radius: 6px; box-shadow: 0 6px 18px rgba(0,0,0,0.08); padding: 6px 0; max-width: 90vw; max-height: 80vh; overflow: auto; }
+.ctx-menu button { display: block; width: 100%; padding: 8px 12px; text-align: left; font-size: 14px; background: transparent; border: none; }
+.ctx-menu button:hover { background: #f3f4f6; }
+.edited-label { font-size: 10px; opacity: 0.8; margin-left: 6px; }
+.msg-meta { font-size: 11px; margin-top: 4px; }
+#edit-toolbar { display: none; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 999px; background: #f3f4f6; font-size: 13px; }
+#edit-toolbar .text { color: #111827; }
+#edit-toolbar button { background: transparent; border: none; font-weight: 600; cursor: pointer; }
+</style>
+<div class="min-h-screen h-screen w-full flex items-stretch">
+  <div class="flex-1 flex flex-col">
+    <header class="flex items-center justify-between px-4 py-3 border-b bg-white">
+      <div class="flex items-center gap-3">
+        <a href="{% url 'direct:inbox' %}" class="p-1 rounded hover:bg-gray-100" aria-label="Назад">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+          </svg>
+        </a>
+        {% if kind == 'direct' %}
+          {% with other_user=other %}
+            <div class="h-10 w-10 rounded-full bg-gradient-to-tr from-pink-400 to-yellow-400 flex items-center justify-center text-white font-semibold">
+              {% if other_user.profile and other_user.profile.avatar %}
+                <img src="{{ other_user.profile.avatar.url }}" alt="" class="h-10 w-10 rounded-full object-cover">
+              {% else %}
+                {{ other_user.username|first|upper }}
+              {% endif %}
+            </div>
+            <div class="font-semibold">{{ other_user.username }}</div>
+          {% endwith %}
+        {% else %}
+          {% with title=chat.name|default:other %}
+            <div class="h-10 w-10 rounded-full bg-indigo-400 flex items-center justify-center text-white font-semibold">
+              {{ title|first|upper }}
+            </div>
+            <div class="font-semibold">{{ title }}</div>
+          {% endwith %}
+        {% endif %}
+      </div>
+      <div style="width:36px; height:36px;"></div>
+    </header>
 
-  <div class="min-h-screen h-screen w-full flex items-stretch">
-    <div class="flex-1 flex flex-col">
-      <header class="flex items-center justify-between px-4 py-3 border-b bg-white">
-        <div class="flex items-center gap-3">
-          <a href="{% url 'direct:inbox' %}" class="p-1 rounded hover:bg-gray-100" aria-label="Назад">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-            </svg>
-          </a>
-          {% if kind == 'direct' %}
-            {% with other_user=other %}
-              <div class="h-10 w-10 rounded-full bg-gradient-to-tr from-pink-400 to-yellow-400 flex items-center justify-center text-white font-semibold">
-                {% if other_user.profile and other_user.profile.avatar %}
-                  <img src="{{ other_user.profile.avatar.url }}" alt="" class="h-10 w-10 rounded-full object-cover">
-                {% else %}
-                  {{ other_user.username|first|upper }}
-                {% endif %}
-              </div>
-              <div class="font-semibold">{{ other_user.username }}</div>
-            {% endwith %}
-          {% else %}
-            {% with title=chat.name|default:other %}
-              <div class="h-10 w-10 rounded-full bg-indigo-400 flex items-center justify-center text-white font-semibold">
-                {{ title|first|upper }}
-              </div>
-              <div class="font-semibold">{{ title }}</div>
-            {% endwith %}
-          {% endif %}
+    <main id="chat-window" class="flex-1 overflow-y-auto space-y-4 p-6 bg-[color:rgba(250,250,250,1)]"></main>
+
+    <footer class="border-t bg-white px-4 py-3">
+      <div class="max-w-3xl mx-auto flex items-center gap-3">
+        <div id="edit-toolbar" class="hidden">
+          <div class="text">Editing message</div>
+          <button id="cancel-edit">Cancel</button>
         </div>
-        <div style="width:36px; height:36px;"></div>
-      </header>
-
-      <main id="chat-window" class="flex-1 overflow-y-auto space-y-4 p-6 bg-[color:rgba(250,250,250,1)]"></main>
-
-      <footer class="border-t bg-white px-4 py-3">
-        <div class="max-w-3xl mx-auto flex items-center gap-3">
-          <div id="edit-toolbar" class="hidden">
-            <div class="text">Editing message</div>
-            <button id="cancel-edit">Cancel</button>
-          </div>
-          <input id="msg-input" type="text" placeholder="Write a message..." class="flex-1 border rounded-full px-4 text-sm focus:outline-none focus:ring-2 focus:ring-sky-200 chat-input" />
-          <button id="send-btn" class="bg-[#0095f6] hover:bg-[#0084e6] text-white rounded-full btn-send" aria-label="Send">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" class="h-5 w-5">
-              <path fill="#ffffff" d="M568.4 37.7C578.2 34.2 589 36.7 596.4 44C603.8 51.3 606.2 62.2 602.7 72L424.7 568.9C419.7 582.8 406.6 592 391.9 592C377.7 592 364.9 583.4 359.6 570.3L295.4 412.3C290.9 401.3 292.9 388.7 300.6 379.7L395.1 267.3C400.2 261.2 399.8 252.3 394.2 246.7C388.6 241.1 379.6 240.7 373.6 245.8L261.2 340.1C252.1 347.7 239.6 349.7 228.6 345.3L70.1 280.8C57 275.5 48.4 262.7 48.4 248.5C48.4 233.8 57.6 220.7 71.5 215.7L568.4 37.7z"/></svg>
-          </button>
-        </div>
-      </footer>
-    </div>
+        <input id="msg-input" type="text" placeholder="Write a message..." class="flex-1 border rounded-full px-4 text-sm focus:outline-none focus:ring-2 focus:ring-sky-200 chat-input" />
+        <button id="send-btn" class="bg-[#0095f6] hover:bg-[#0084e6] text-white rounded-full btn-send" aria-label="Send">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" class="h-5 w-5">
+            <path fill="#ffffff" d="M568.4 37.7C578.2 34.2 589 36.7 596.4 44C603.8 51.3 606.2 62.2 602.7 72L424.7 568.9C419.7 582.8 406.6 592 391.9 592C377.7 592 364.9 583.4 359.6 570.3L295.4 412.3C290.9 401.3 292.9 388.7 300.6 379.7L395.1 267.3C400.2 261.2 399.8 252.3 394.2 246.7C388.6 241.1 379.6 240.7 373.6 245.8L261.2 340.1C252.1 347.7 239.6 349.7 228.6 345.3L70.1 280.8C57 275.5 48.4 262.7 48.4 248.5C48.4 233.8 57.6 220.7 71.5 215.7L568.4 37.7z"/></svg>
+        </button>
+      </div>
+    </footer>
   </div>
+</div>
 
-  <div id="ctx-menu" style="display:none;" class="ctx-menu"></div>
+<div id="ctx-menu" style="display:none;" class="ctx-menu"></div>
 
 <script>
-(function () {
+  (function () {
   const KIND = "{{ kind }}";
   const CHAT_ID = "{{ chat.id }}";
   const USER_ID = Number("{{ request.user.id }}");

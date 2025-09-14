@@ -52,12 +52,16 @@ def inbox(request):
         conv_id = str(chat.id)
         ct_id = direct_ct.id
         pinned = (chat.id in pinned_direct_ids)
+
+        last_msg = DirectMessage.objects.filter(direct=chat).order_by("-created_at").first()
+
         conversations.append({
             'kind': 'direct',
             'id': conv_id,
             'title': other.username if other else '',
             'other': other,
             'created_at': chat.created_at,
+            'last_message': last_msg,
             'pinned': pinned,
             'pinned_at': pinned_map.get((ct_id, conv_id)),
             'position': positions_map.get((ct_id, conv_id)),  # None або int
@@ -67,11 +71,15 @@ def inbox(request):
         conv_id = str(g.id)
         ct_id = group_ct.id
         pinned = (g.id in pinned_group_ids)
+
+        last_msg = GroupMessage.objects.filter(group_chat=g).order_by("-created_at").first()
+
         conversations.append({
             'kind': 'group',
             'id': conv_id,
             'title': g.name or 'Груповий чат',
             'group': g,
+            'last_message': last_msg,
             'created_at': g.created_at,
             'pinned': pinned,
             'pinned_at': pinned_map.get((ct_id, conv_id)),
