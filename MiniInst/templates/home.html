@@ -103,13 +103,12 @@
                             </svg>
                         </button>
                     </div>
+                      {% if post.image %}
+                        <a href="{% url 'post_detail' post.pk %}">
+                            <img src="{{ post.image.url }}" class="w-full object-cover max-h-96 hover:opacity-90 transition" />
+                        </a>
 
-                    {% if post.image %}
-                    <div class="w-full">
-                        <img src="{{ post.image.url }}" alt="post image" class="w-full object-cover max-h-96">
-                    </div>
                     {% endif %}
-
                     <div class="p-4">
                         <div class="text-gray-800">
                             <span class="font-semibold mr-1">{{ post.author.username }}</span>
