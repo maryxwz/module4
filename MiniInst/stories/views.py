@@ -1,10 +1,7 @@
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from .forms import StoriesForms
 from .models.story import Story
-
-
-
 
 
 @login_required
@@ -29,3 +26,12 @@ def all_stories(request):
                   'all_stories.html',
                   {'active_stories': active_stories,
                    'archived_stories': archived_stories})
+
+
+@login_required
+def view_story(request, id):
+    story = get_object_or_404(Story, id=id)
+    if not story.is_active():
+        redirect('/')
+    else:
+        return render(request, 'current_story.html', {'story': story})
