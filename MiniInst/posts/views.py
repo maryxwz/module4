@@ -4,6 +4,8 @@ from .forms import PostForm
 
 def post_list(request):
     posts = Post.objects.filter(is_archived=False).order_by("-created_at")
+    for post in posts:
+        post.comment_count = post.comments.filter(is_deleted=False).count()
     return render(request, "posts/post_list.html", {"posts": posts})
 
 def post_detail(request, pk):
