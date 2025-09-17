@@ -1,13 +1,16 @@
+{% load static %}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="uk">
 <head>
     <meta charset="UTF-8">
-    <title>Все посты</title>
+    <title>Усі пости</title>
+    <link rel="stylesheet" href="{% static 'comments/modal_comments.css' %}">
+    <script defer src="{% static 'comments/modal_comments.js' %}"></script>
 </head>
 <body>
-    <h1>Все посты</h1>
+    <h1>Усі пости</h1>
 
-    <p><a href="{% url 'post_create' %}">➕ Создать новый пост</a></p>
+    <p><a href="{% url 'post_create' %}">➕ Створити новий пост</a></p>
 
     <hr>
 
@@ -16,19 +19,23 @@
         <p><strong>{{ post.author.username }}</strong> — {{ post.created_at|date:"Y-m-d H:i" }}</p>
 
         {% if post.image %}
-          <img src="{{ post.image.url }}" width="300">
+          <img src="{{ post.image.url }}" width="300" alt="">
         {% endif %}
 
         <p>{{ post.caption }}</p>
 
         <p>
-          <a href="{% url 'post_detail' post.pk %}">Подробнее</a> |
-          <a href="{% url 'post_update' post.pk %}">Редактировать</a> |
-
+          <a href="{% url 'post_detail' post.pk %}">Детальніше</a> |
+          <a href="{% url 'post_update' post.pk %}">Редагувати</a> |
+          <a href="#" data-open-comments data-post-id="{{ post.id }}">
+              Коментарі ({{ post.comment_count }})
+          </a>
         </p>
       </div>
     {% empty %}
-      <p>Постов пока нет 👀</p>
+      <p>Постів поки немає 👀</p>
     {% endfor %}
 </body>
 </html>
+
+
