@@ -41,7 +41,6 @@ class DirectConsumer(AsyncWebsocketConsumer):
                 await self.send(json.dumps({'error': 'not allowed'}))
                 return
             msg = await self.save_message(self.kind, self.chat_id, self.user.id, text)
-            # ------------------------------------СПОВІЩЕННЯ------------------------------------------------------------
             if self.kind == 'direct':
                 direct = await database_sync_to_async(Direct.objects.get)(id=self.chat_id)
                 participants = [direct.user1_id, direct.user2_id]
@@ -52,7 +51,7 @@ class DirectConsumer(AsyncWebsocketConsumer):
 
             for user_id in participants:
                 if user_id == self.user.id:
-                    continue  # себе не повідомляємо
+                    continue
                 async_to_sync(channel_layer.group_send)(
                     f"user_{user_id}_notifications",
                     {

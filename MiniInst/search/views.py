@@ -50,7 +50,6 @@ def search_view(request):
                     p for p in qs
                     if p.caption and pattern.search(p.caption)
                 ]
-
     context = {
         "q": q_raw,
         "exact_user": exact_user,

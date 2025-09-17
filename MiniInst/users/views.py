@@ -1,6 +1,4 @@
-import random
-
-from django.http.response import Http404, HttpResponse, JsonResponse
+from django.http.response import Http404
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, get_user_model
 from django.contrib.auth.decorators import login_required
@@ -8,7 +6,6 @@ from django.urls import reverse_lazy, reverse
 from django.contrib.auth import views as auth_views
 from django.core.exceptions import ObjectDoesNotExist
 from django.views.decorators.http import require_POST
-from django.core.paginator import Paginator
 
 from backoffice.forms import UserReportForm
 from .forms import CustomUserCreationForm
@@ -182,11 +179,6 @@ def follow_request_reject_view(request, pk):
     return redirect('profile', username=fr.from_user.username)
 
 def _follow_partial_response(request, target_user):
-    """
-    Возвращаем HTML блока кнопки + oob-апдейты счетчиков.
-    ВАЖНО: рендерим тот partial, который у тебя уже существует — users/_follow_list.html
-    (у тебя он сейчас содержит кнопки и OOB-апдейты).
-    """
     profile_user = target_user
     current_user = request.user
     is_following = Follow.objects.filter(follower=current_user, following=profile_user).exists()
@@ -203,16 +195,12 @@ def _follow_partial_response(request, target_user):
         "following_count": following_count,
     })
 
-# --------- НОВОЕ: списки підписників/підписок для модалки ---------
 
 @login_required
 def followers_list_view(request, username):
-    """
-    Список тех, кто ПОДПИСАЛСЯ на profile_user.
-    """
+
     profile_user = get_object_or_404(CustomUser, username=username)
 
-    # Все фолловеры (люди, у которых follower -> profile_user в поле following)
     rels = Follow.objects.select_related('follower').filter(following=profile_user)
     users = [rel.follower for rel in rels]
 
@@ -226,12 +214,9 @@ def followers_list_view(request, username):
 
 @login_required
 def following_list_view(request, username):
-    """
-    Список тех, на КОГО ПОДПИСАН profile_user.
-    """
+
     profile_user = get_object_or_404(CustomUser, username=username)
 
-    # Все, на кого он подписан (у него follower = profile_user)
     rels = Follow.objects.select_related('following').filter(follower=profile_user)
     users = [rel.following for rel in rels]
 
