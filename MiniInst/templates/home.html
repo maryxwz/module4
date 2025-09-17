@@ -3,6 +3,9 @@
 {% block title %}Головна - MiniInst{% endblock %}
 
 {% block content %}
+{% load static %}
+<link rel="stylesheet" href="{% static 'comments/modal_comments.css' %}">
+<script defer src="{% static 'comments/modal_comments.js' %}"></script>
 <div class="app-container flex min-h-screen bg-gray-100">
 
     <!-- Sidebar -->
@@ -109,6 +112,21 @@
                             <span class="font-semibold mr-1">{{ post.author.username }}</span>
                             {{ post.content }}
                         </div>
+                    </div>
+                    <div class="px-4 pb-4">
+                        <a
+                          href="#"
+                          class="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-gray-200 bg-gray-50 hover:bg-gray-100 text-gray-800 text-sm"
+                          data-open-comments
+                          data-post-id="{{ post.id }}"
+                          aria-label="Open comments"
+                          title="Open comments"
+                        >
+                          <svg class="w-4 h-4" viewBox="0 0 24 24" aria-hidden="true">
+                            <path fill="currentColor" d="M20 2H4a2 2 0 0 0-2 2v14l4-4h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2Z"/>
+                          </svg>
+                          <span>Comments</span>
+                        </a>
                     </div>
                 </article>
                 {% endfor %}
