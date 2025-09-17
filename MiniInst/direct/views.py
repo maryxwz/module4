@@ -188,6 +188,114 @@ def inbox(request):
         'suggested_users': suggested_users,
     })
 
+@login_required
+def get_friends(request):
+    q = (request.GET.get('q') or '').strip()
+
+    following_ids = list(
+        Follow.objects.filter(follower=request.user)
+        .values_list('following_id', flat=True)
+        .distinct()
+    )
+    followers_ids = list(
+        Follow.objects.filter(following=request.user)
+        .values_list('follower_id', flat=True)
+        .distinct()
+    )
+
+    blocked_by_me_ids = list(
+        Block.objects.filter(blocker=request.user)
+        .values_list('blocked_id', flat=True)
+        .distinct()
+    )
+    blocked_me_ids = list(
+        Block.objects.filter(blocked=request.user)
+        .values_list('blocker_id', flat=True)
+        .distinct()
+    )
+
+    if not following_ids or not followers_ids:
+        friends_qs = CustomUser.objects.none()
+    else:
+        friends_qs = CustomUser.objects.filter(
+            id__in=following_ids
+        ).filter(
+            id__in=followers_ids
+        )
+
+        if blocked_by_me_ids:
+            friends_qs = friends_qs.exclude(id__in=blocked_by_me_ids)
+        if blocked_me_ids:
+            friends_qs = friends_qs.exclude(id__in=blocked_me_ids)
+
+        friends_qs = friends_qs.exclude(id=request.user.id).filter(is_banned=False)
+
+        if q:
+            friends_qs = friends_qs.filter(username__icontains=q)
+
+        friends_qs = friends_qs.order_by('username').distinct()
+
+    friends = [
+        {
+            "id": str(user.id),
+            "username": user.username,
+            "avatar": user.avatar.url if user.avatar else None,
+        }
+        for user in friends_qs
+    ]
+
+    return JsonResponse({"friends": friends})
+
+@login_required
+@require_POST
+def create_group(request):
+    name = request.POST.get('name')
+    if not name:
+        return JsonResponse({"error": "Назва групи не може бути порожньою"}, status=400)
+    
+    participants_ids = request.POST.getlist('participants[]')
+    if not participants_ids:
+        return JsonResponse({"error": "Потрібно додати хоча б одного учасника"}, status=400)
+
+    participants_ids = list({int(pid) for pid in participants_ids if pid.isdigit()})
+
+    valid_participants = []
+    errors = []
+
+    for pid in participants_ids:
+        if pid == request.user.id:
+            errors.append(f"Користувач {request.user.username} вже є у групі")
+            continue
+
+        user = get_object_or_404(CustomUser, id=pid)
+
+        if user.is_banned:
+            errors.append(f"Користувач {user.username} заблокований системою")
+            continue
+
+        if not (Follow.objects.filter(follower=request.user, following=user).exists() and
+                Follow.objects.filter(follower=user, following=request.user).exists()):
+            errors.append(f"Немає взаємної підписки з {user.username}")
+            continue
+
+        if Block.objects.filter(Q(blocker=request.user, blocked=user) | Q(blocker=user, blocked=request.user)).exists():
+            errors.append(f"Користувач {user.username} заблокований")
+            continue
+
+        valid_participants.append(user)
+
+    if errors:
+        return JsonResponse({"error": "Не вдалося створити групу", "details": errors}, status=403)
+
+    group = GroupChat.objects.create(name=name, creator=request.user)
+    group.members.add(request.user, *valid_participants)
+
+    return JsonResponse({
+        "ok": True,
+        "group_id": str(group.id),
+        "name": group.name,
+        "participants": [u.username for u in group.members.all()]
+    })
 
 
 @require_POST
