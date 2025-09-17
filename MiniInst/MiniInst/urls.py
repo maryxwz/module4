@@ -32,6 +32,7 @@ urlpatterns = [
     path("stories/", include("stories.urls"), name='stories'),
     path("users/", include("users.urls"), name='users'),
     path('posts/', include('posts.urls')),
+    path("comments/", include("comments.urls"), name="comments"),
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
