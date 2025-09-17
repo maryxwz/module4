@@ -3,16 +3,48 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 from django.core.paginator import Paginator
 from django.http import JsonResponse, HttpResponseBadRequest
-from .models import Direct, DirectMessage, GroupChat, GroupMessage, PinnedConversation
+from .models import Direct, DirectMessage, GroupChat, GroupMessage, PinnedConversation, PinnedConversation, ConversationOrder
 from django.contrib.contenttypes.models import ContentType
 from django.views.decorators.http import require_POST
 from users.models.block import Block
+from users.models.custom_user import CustomUser
+from users.models.follow import Follow
+import json
+from django.utils import timezone
+
+@require_POST
+@login_required
+def create_direct(request):
+    target_id = request.POST.get("target_id")
+    if not target_id:
+        return JsonResponse({"error": "target_id не вказаний"}, status=400)
+
+    target_user = get_object_or_404(CustomUser, id=target_id)
+
+    if Block.objects.filter(blocker=target_user, blocked=request.user).exists() or \
+       Block.objects.filter(blocker=request.user, blocked=target_user).exists():
+        return JsonResponse({"error": "Не можна створити чат, один з користувачів заблокований"}, status=403)
+
+    if not Follow.objects.filter(follower=request.user, following=target_user).exists() or \
+       not Follow.objects.filter(follower=target_user, following=request.user).exists():
+        return JsonResponse({"error": "Обидва користувачі повинні бути підписані один на одного"}, status=403)
+
+    direct, created = Direct.objects.get_or_create(
+        user1=min(request.user, target_user, key=lambda u: u.id),
+        user2=max(request.user, target_user, key=lambda u: u.id)
+    )
+
+    return JsonResponse({
+        "ok": True,
+        "created": created,
+        "direct_id": str(direct.id)
+    })
 
 
 @login_required
 def inbox(request):
     q = (request.GET.get('q') or '').strip()
-
+    
     directs_qs = Direct.objects.filter(Q(user1=request.user) | Q(user2=request.user))
     groups_qs = GroupChat.objects.filter(members=request.user)
 
@@ -25,7 +57,6 @@ def inbox(request):
     directs_qs = directs_qs.order_by('-created_at').select_related('user1', 'user2')
     groups_qs = groups_qs.order_by('-created_at')
 
-    conversations = []
     direct_ct = ContentType.objects.get_for_model(Direct)
     group_ct = ContentType.objects.get_for_model(GroupChat)
 
@@ -41,6 +72,58 @@ def inbox(request):
     for p in PinnedConversation.objects.filter(user=request.user):
         pinned_map[(p.content_type_id, str(p.object_id))] = p.pinned_at
 
+    positions_map = {}
+    for o in ConversationOrder.objects.filter(user=request.user):
+        positions_map[(o.content_type_id, str(o.object_id))] = o.position
+
+    following_ids = list(
+        Follow.objects.filter(follower=request.user)
+        .values_list('following_id', flat=True)
+        .distinct()
+    )
+
+    followers_ids = list(
+        Follow.objects.filter(following=request.user)
+        .values_list('follower_id', flat=True)
+        .distinct()
+    )
+
+    direct_partner_ids = list(Direct.objects.filter(user1=request.user).values_list('user2_id', flat=True)) + \
+                         list(Direct.objects.filter(user2=request.user).values_list('user1_id', flat=True))
+    
+    direct_partner_ids = list({int(x) for x in direct_partner_ids if x is not None})
+
+    blocked_by_me_ids = list(Block.objects.filter(blocker=request.user).values_list('blocked_id', flat=True).distinct())
+    blocked_me_ids = list(Block.objects.filter(blocked=request.user).values_list('blocker_id', flat=True).distinct())
+    
+    if not following_ids or not followers_ids:
+        suggested_users_qs = CustomUser.objects.none()
+    else:
+        suggested_users_qs = CustomUser.objects.filter(
+            id__in=following_ids
+        ).filter(
+            id__in=followers_ids
+        )
+
+        if direct_partner_ids:
+            suggested_users_qs = suggested_users_qs.exclude(id__in=direct_partner_ids)
+
+        if blocked_by_me_ids:
+            suggested_users_qs = suggested_users_qs.exclude(id__in=blocked_by_me_ids)
+        if blocked_me_ids:
+            suggested_users_qs = suggested_users_qs.exclude(id__in=blocked_me_ids)
+
+        suggested_users_qs = suggested_users_qs.exclude(id=request.user.id).filter(is_banned=False)
+
+        suggested_users_qs = suggested_users_qs.order_by('username').distinct()
+
+    if q:
+        suggested_users_qs = suggested_users_qs.filter(username__icontains=q)
+    
+    suggested_users = suggested_users_qs
+
+    conversations = []
+
     for chat in directs_qs:
         other = chat.get_receiver(request.user)
 
@@ -52,40 +135,59 @@ def inbox(request):
         conv_id = str(chat.id)
         ct_id = direct_ct.id
         pinned = (chat.id in pinned_direct_ids)
+
+        last_msg = DirectMessage.objects.filter(direct=chat).order_by("-created_at").first()
+
         conversations.append({
             'kind': 'direct',
             'id': conv_id,
             'title': other.username if other else '',
             'other': other,
             'created_at': chat.created_at,
+            'last_message': last_msg,
             'pinned': pinned,
             'pinned_at': pinned_map.get((ct_id, conv_id)),
+            'position': positions_map.get((ct_id, conv_id)),  # None або int
         })
 
     for g in groups_qs:
         conv_id = str(g.id)
         ct_id = group_ct.id
         pinned = (g.id in pinned_group_ids)
+
+        last_msg = GroupMessage.objects.filter(group_chat=g).order_by("-created_at").first()
+
         conversations.append({
             'kind': 'group',
             'id': conv_id,
             'title': g.name or 'Груповий чат',
             'group': g,
+            'last_message': last_msg,
             'created_at': g.created_at,
             'pinned': pinned,
             'pinned_at': pinned_map.get((ct_id, conv_id)),
+            'position': positions_map.get((ct_id, conv_id)),
         })
 
-    pinned = sorted([c for c in conversations if c['pinned']],
-                    key=lambda x: x['pinned_at'] or 0, reverse=True)
-    not_pinned = sorted([c for c in conversations if not c['pinned']],
-                        key=lambda x: x['created_at'] or 0, reverse=True)
+    pinned = sorted(
+        [c for c in conversations if c['pinned']],
+        key=lambda x: (x.get('position') if x.get('position') is not None else float('inf'))
+    )
+
+    not_pinned = sorted(
+        [c for c in conversations if not c['pinned']],
+        key=lambda x: (x.get('created_at') or timezone.now()),
+        reverse=True
+    )
+
     conversations_sorted = pinned + not_pinned
 
     return render(request, 'direct/inbox.html', {
         'conversations': conversations_sorted,
         'search_query': q,
+        'suggested_users': suggested_users,
     })
+
 
 
 @require_POST
@@ -96,10 +198,7 @@ def toggle_pin(request):
     if kind not in ('direct', 'group') or not obj_id:
         return HttpResponseBadRequest("Invalid parameters")
 
-    if kind == 'direct':
-        model = Direct
-    else:
-        model = GroupChat
+    model = Direct if kind == 'direct' else GroupChat
 
     try:
         obj = get_object_or_404(model, id=obj_id)
@@ -107,14 +206,67 @@ def toggle_pin(request):
         return HttpResponseBadRequest("Object not found")
 
     ct = ContentType.objects.get_for_model(model)
+
     pin_qs = PinnedConversation.objects.filter(user=request.user, content_type=ct, object_id=obj_id)
     if pin_qs.exists():
         pin_qs.delete()
+        ConversationOrder.objects.filter(user=request.user, content_type=ct, object_id=str(obj_id)).delete()
         return JsonResponse({'pinned': False})
     else:
         PinnedConversation.objects.create(user=request.user, content_type=ct, object_id=obj_id)
-        return JsonResponse({'pinned': True})
 
+        existing = ConversationOrder.objects.filter(user=request.user, content_type=ct).order_by('position')
+        if existing.exists():
+            min_pos = existing.first().position
+            new_pos = min_pos - 1
+        else:
+            new_pos = 0
+
+        ConversationOrder.objects.create(
+            user=request.user,
+            content_type=ct,
+            object_id=str(obj_id),
+            position=new_pos
+        )
+        return JsonResponse({'pinned': True})
+    
+@require_POST
+@login_required
+def reorder_pins(request):
+    try:
+        payload = json.loads(request.body.decode('utf-8'))
+        order = payload.get('order') or []
+    except Exception:
+        return HttpResponseBadRequest("Bad payload")
+
+    pos = 0
+    for item in order:
+        kind = item.get('kind')
+        obj_id = item.get('id')
+        if kind not in ('direct', 'group') or not obj_id:
+            continue
+
+        model = Direct if kind == 'direct' else GroupChat
+        ct = ContentType.objects.get_for_model(model)
+
+        pinned_exists = PinnedConversation.objects.filter(user=request.user, content_type=ct, object_id=obj_id).exists()
+        if not pinned_exists:
+            continue
+
+        co, created = ConversationOrder.objects.get_or_create(
+            user=request.user,
+            content_type=ct,
+            object_id=str(obj_id),
+            defaults={'position': pos}
+        )
+        if not created:
+            if co.position != pos:
+                co.position = pos
+                co.save(update_fields=['position'])
+        pos += 1
+
+    return JsonResponse({'ok': True})
+    
 
 @login_required
 def thread_view(request, kind, chat_id):
