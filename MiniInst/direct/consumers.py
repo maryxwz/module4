@@ -41,7 +41,8 @@ class DirectConsumer(AsyncWebsocketConsumer):
                 await self.send(json.dumps({'error': 'not allowed'}))
                 return
             msg = await self.save_message(self.kind, self.chat_id, self.user.id, text)
-            # ------------------------------------СПОВІЩЕННЯ------------------------------------------------------------
+            
+            
             if self.kind == 'direct':
                 direct = await database_sync_to_async(Direct.objects.get)(id=self.chat_id)
                 participants = [direct.user1_id, direct.user2_id]
@@ -49,22 +50,9 @@ class DirectConsumer(AsyncWebsocketConsumer):
                 group = await database_sync_to_async(GroupChat.objects.get)(id=self.chat_id)
                 participants = list(
                     await database_sync_to_async(lambda: list(group.members.values_list('id', flat=True)))())
+            else:
+                participants = []
 
-            for user_id in participants:
-                if user_id == self.user.id:
-                    continue  # себе не повідомляємо
-                async_to_sync(channel_layer.group_send)(
-                    f"user_{user_id}_notifications",
-                    {
-                        "type": "notify",
-                        "data": {
-                            "text": f"💬 Нове повідомлення від {msg.get('sender_username')}",
-                            "chat_kind": self.kind,
-                            "chat_id": self.chat_id,
-                        },
-                    }
-                )
-            # ----------------------------------------------------------------------------------------------------------
             if not msg:
                 await self.send(json.dumps({'error': 'save_failed'}))
                 return

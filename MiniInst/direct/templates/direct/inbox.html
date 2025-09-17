@@ -12,6 +12,12 @@
               aria-pressed="false">
         Edit
       </button>
+
+      <button id="new-group-btn" type="button"
+              class="px-3 py-1 rounded border hover:bg-gray-100 focus:outline-none"
+              title="Нова група">
+        Create group
+      </button>
     </div>
   </div>
 
@@ -184,6 +190,51 @@
       {% endif %}
     {% endif %}
   </ul>
+</div>
+
+
+
+
+<div id="group-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/50">
+    <div class="absolute inset-0 bg-black/40" id="group-modal-backdrop" tabindex="-1"></div>
+
+    <div class="relative bg-white rounded-lg shadow-xl max-w-md w-full mx-4 z-10">
+      <div class="px-4 py-3 border-b flex items-center justify-between">
+        <h3 class="text-lg font-semibold">Створити групу</h3>
+        <button id="group-modal-close" class="h-8 w-8 text-gray-600 hover:text-gray-800" aria-label="Закрити">&times;</button>
+      </div>
+
+      <div class="p-4 space-y-3">
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Назва групи</label>
+          <input id="group-name" type="text" maxlength="120"
+                 class="mt-1 block w-full border rounded py-2 px-3 focus:outline-none focus:ring-2 focus:ring-indigo-300"
+                 placeholder="Наприклад: Друзі" />
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Пошук друзів</label>
+          <input id="group-friends-search" type="search"
+                 class="mt-1 block w-full border rounded py-2 px-3 focus:outline-none focus:ring-2 focus:ring-indigo-300"
+                 placeholder="Шукати по імені..." />
+        </div>
+
+        <div class="text-sm text-gray-500">Оберіть учасників (взаємні підписки, без блокувань)</div>
+
+        <div id="group-friends-list" class="max-h-48 overflow-auto border rounded p-2 bg-gray-50">
+          <div id="group-friends-loading" class="text-sm text-gray-500">Завантаження...</div>
+        </div>
+
+        <div id="group-form-error" class="text-sm text-red-600 hidden"></div>
+
+        <div class="flex items-center justify-end gap-2">
+          <button id="group-modal-cancel" type="button" class="px-3 py-1 rounded border hover:bg-gray-100">Відміна</button>
+          <button id="group-create-btn" type="button" class="px-4 py-1 rounded bg-indigo-600 text-white hover:bg-indigo-700">Створити</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
 </div>
 
 <script>
@@ -725,5 +776,228 @@ document.getElementById('conversations-list').addEventListener('click', async (e
       performSearch('', true);
     }
   });
+
+
+  // ---- Modal group logic ----
+  const newGroupBtn = document.getElementById('new-group-btn');
+  const groupModal = document.getElementById('group-modal');
+  const groupModalBackdrop = document.getElementById('group-modal-backdrop');
+  const groupModalClose = document.getElementById('group-modal-close');
+  const groupModalCancel = document.getElementById('group-modal-cancel');
+  const groupNameInput = document.getElementById('group-name');
+  const friendsSearchInput = document.getElementById('group-friends-search');
+  const friendsListEl = document.getElementById('group-friends-list');
+  const friendsLoadingEl = document.getElementById('group-friends-loading');
+  const groupCreateBtn = document.getElementById('group-create-btn');
+  const groupFormError = document.getElementById('group-form-error');
+
+  // URL-ендпоінти (Django url template tags)
+  const GET_FRIENDS_URL = "{% url 'direct:get_friends' %}";
+  const CREATE_GROUP_URL = "{% url 'direct:create_group' %}";
+
+  function openGroupModal() {
+    groupFormError.classList.add('hidden');
+    groupNameInput.value = '';
+    friendsSearchInput.value = '';
+    friendsListEl.innerHTML = '';
+    friendsListEl.appendChild(friendsLoadingEl);
+    friendsLoadingEl.classList.remove('hidden');
+    groupModal.classList.remove('hidden');
+    // load friends
+    loadFriendsForModal('');
+    // focus name
+    setTimeout(() => groupNameInput.focus(), 120);
+  }
+
+  function closeGroupModal() {
+    groupModal.classList.add('hidden');
+  }
+
+  newGroupBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    openGroupModal();
+  });
+  groupModalClose.addEventListener('click', closeGroupModal);
+  groupModalCancel.addEventListener('click', closeGroupModal);
+  groupModalBackdrop.addEventListener('click', closeGroupModal);
+  document.addEventListener('keydown', (e) => {
+    if (!groupModal.classList.contains('hidden') && e.key === 'Escape') closeGroupModal();
+  });
+
+  // debounce для пошуку в модалці
+  const debouncedLoadFriends = debounce((q) => loadFriendsForModal(q), 300);
+
+  friendsSearchInput.addEventListener('input', (e) => {
+    debouncedLoadFriends(e.target.value.trim());
+  });
+
+  async function loadFriendsForModal(q) {
+    friendsListEl.innerHTML = '';
+    friendsLoadingEl.textContent = 'Завантаження...';
+    friendsLoadingEl.classList.remove('hidden');
+    friendsListEl.appendChild(friendsLoadingEl);
+
+    try {
+      const url = new URL(GET_FRIENDS_URL, window.location.origin);
+      if (q) url.searchParams.set('q', q);
+      const resp = await fetch(url.toString(), {
+        method: 'GET',
+        credentials: 'same-origin',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+      });
+      if (!resp.ok) throw new Error('Network error');
+
+      const data = await resp.json();
+      friendsListEl.innerHTML = '';
+
+      if (!data.friends || data.friends.length === 0) {
+        const empty = document.createElement('div');
+        empty.className = 'text-sm text-gray-500';
+        empty.textContent = 'Немає друзів за цим запитом.';
+        friendsListEl.appendChild(empty);
+        return;
+      }
+
+      // render checkboxes
+      const ul = document.createElement('ul');
+      ul.className = 'divide-y divide-gray-100';
+      data.friends.forEach(u => {
+        const li = document.createElement('li');
+        li.className = 'py-2 flex items-center justify-between';
+
+        const left = document.createElement('div');
+        left.className = 'flex items-center gap-3 min-w-0';
+
+        const avatarWrap = document.createElement('div');
+        avatarWrap.className = 'flex-shrink-0';
+        if (u.avatar) {
+          const img = document.createElement('img');
+          img.src = u.avatar;
+          img.alt = u.username;
+          img.className = 'h-8 w-8 rounded-full';
+          avatarWrap.appendChild(img);
+        } else {
+          const placeholder = document.createElement('div');
+          placeholder.className = 'h-8 w-8 rounded-full bg-gray-400 flex items-center justify-center text-white font-bold';
+          placeholder.textContent = (u.username || '').slice(0,1).toUpperCase();
+          avatarWrap.appendChild(placeholder);
+        }
+
+        const meta = document.createElement('div');
+        meta.className = 'min-w-0';
+        const name = document.createElement('div');
+        name.className = 'font-medium truncate';
+        name.textContent = u.username;
+        meta.appendChild(name);
+
+        left.appendChild(avatarWrap);
+        left.appendChild(meta);
+
+        const checkboxWrap = document.createElement('div');
+        checkboxWrap.className = 'flex items-center';
+        const cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.className = 'group-participant-checkbox';
+        cb.value = u.id;
+        cb.id = `group-part-${u.id}`;
+        checkboxWrap.appendChild(cb);
+
+        li.appendChild(left);
+        li.appendChild(checkboxWrap);
+        ul.appendChild(li);
+      });
+
+      friendsListEl.appendChild(ul);
+
+    } catch (err) {
+      friendsListEl.innerHTML = '';
+      const errDiv = document.createElement('div');
+      errDiv.className = 'text-sm text-red-600';
+      errDiv.textContent = 'Помилка завантаження друзів.';
+      friendsListEl.appendChild(errDiv);
+      console.error('loadFriendsForModal', err);
+    }
+  }
+
+  // CREATE GROUP
+  groupCreateBtn.addEventListener('click', async (e) => {
+    e.preventDefault();
+    groupFormError.classList.add('hidden');
+    groupFormError.textContent = '';
+
+    const name = groupNameInput.value.trim();
+    if (!name) {
+      groupFormError.textContent = 'Назва групи не може бути порожньою.';
+      groupFormError.classList.remove('hidden');
+      return;
+    }
+
+    const checked = Array.from(document.querySelectorAll('.group-participant-checkbox:checked'))
+                         .map(i => i.value);
+
+    if (!checked.length) {
+      groupFormError.textContent = 'Потрібно додати хоча б одного учасника.';
+      groupFormError.classList.remove('hidden');
+      return;
+    }
+
+    // disable button
+    groupCreateBtn.disabled = true;
+    groupCreateBtn.classList.add('opacity-60', 'cursor-not-allowed');
+
+    try {
+      const form = new FormData();
+      form.append('name', name);
+      // participants[] multiple keys
+      checked.forEach(id => form.append('participants[]', id));
+
+      const resp = await fetch(CREATE_GROUP_URL, {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: {
+          'X-CSRFToken': csrftoken
+        },
+        body: form
+      });
+
+      const data = await resp.json().catch(() => null);
+
+      if (!resp.ok) {
+        // show details if present
+        let msg = 'Не вдалося створити групу.';
+        if (data) {
+          if (data.error) msg = data.error;
+          if (data.details && Array.isArray(data.details)) {
+            // join details to readable text
+            msg += ' ' + data.details.join('; ');
+          }
+        }
+        groupFormError.textContent = msg;
+        groupFormError.classList.remove('hidden');
+        groupCreateBtn.disabled = false;
+        groupCreateBtn.classList.remove('opacity-60', 'cursor-not-allowed');
+        return;
+      }
+
+      // success: redirect to group thread
+      if (data && data.group_id) {
+        // close modal quickly then redirect
+        closeGroupModal();
+        window.location.href = `/direct/t/group/${data.group_id}/`;
+        return;
+      } else {
+        groupFormError.textContent = 'Сервер не повернув id групи.';
+        groupFormError.classList.remove('hidden');
+      }
+    } catch (err) {
+      console.error('create group error', err);
+      groupFormError.textContent = 'Сталася помилка при створенні групи.';
+      groupFormError.classList.remove('hidden');
+    } finally {
+      groupCreateBtn.disabled = false;
+      groupCreateBtn.classList.remove('opacity-60', 'cursor-not-allowed');
+    }
+  });
+
 </script>
 {% endblock %}

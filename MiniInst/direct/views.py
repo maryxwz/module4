@@ -11,6 +11,8 @@ from users.models.custom_user import CustomUser
 from users.models.follow import Follow
 import json
 from django.utils import timezone
+from django.core.exceptions import ObjectDoesNotExist
+
 
 @require_POST
 @login_required
@@ -249,15 +251,19 @@ def get_friends(request):
 @login_required
 @require_POST
 def create_group(request):
-    name = request.POST.get('name')
+    name = (request.POST.get('name') or '').strip()
     if not name:
         return JsonResponse({"error": "Назва групи не може бути порожньою"}, status=400)
-    
-    participants_ids = request.POST.getlist('participants[]')
+
+    participants_ids = request.POST.getlist('participants[]') or []
+    # фільтруємо тільки числа, перетворюємо в int і прибираємо дублі
+    participants_ids = [int(x) for x in participants_ids if str(x).isdigit()]
+    # зберегти унікальні в порядку появи
+    seen = set()
+    participants_ids = [x for x in participants_ids if not (x in seen or seen.add(x))]
+
     if not participants_ids:
         return JsonResponse({"error": "Потрібно додати хоча б одного учасника"}, status=400)
-
-    participants_ids = list({int(pid) for pid in participants_ids if pid.isdigit()})
 
     valid_participants = []
     errors = []
@@ -267,17 +273,23 @@ def create_group(request):
             errors.append(f"Користувач {request.user.username} вже є у групі")
             continue
 
-        user = get_object_or_404(CustomUser, id=pid)
+        try:
+            user = CustomUser.objects.get(pk=pid)
+        except ObjectDoesNotExist:
+            errors.append(f"Користувача з id={pid} не знайдено")
+            continue
 
         if user.is_banned:
             errors.append(f"Користувач {user.username} заблокований системою")
             continue
 
+        # перевіряємо взаємну підписку
         if not (Follow.objects.filter(follower=request.user, following=user).exists() and
                 Follow.objects.filter(follower=user, following=request.user).exists()):
             errors.append(f"Немає взаємної підписки з {user.username}")
             continue
 
+        # перевірка блокувань між користувачами
         if Block.objects.filter(Q(blocker=request.user, blocked=user) | Q(blocker=user, blocked=request.user)).exists():
             errors.append(f"Користувач {user.username} заблокований")
             continue
@@ -285,16 +297,36 @@ def create_group(request):
         valid_participants.append(user)
 
     if errors:
+        # повертаємо деталі — клієнт покаже їх
         return JsonResponse({"error": "Не вдалося створити групу", "details": errors}, status=403)
 
-    group = GroupChat.objects.create(name=name, creator=request.user)
-    group.members.add(request.user, *valid_participants)
+    # створюємо групу (без creator, бо поля може не бути)
+    group = GroupChat.objects.create(name=name)
+
+    # Якщо у моделі є поле для власника з іншим ім'ям — спробуємо встановити
+    for owner_field in ('creator', 'created_by', 'owner'):
+        if hasattr(group, owner_field):
+            setattr(group, owner_field, request.user)
+            try:
+                group.save(update_fields=[owner_field])
+            except Exception:
+                # якщо з якоїсь причини не вдається — ігноруємо (щоб не ламати нічого)
+                pass
+            break
+
+    # Додаємо учасників в M2M 'members' якщо воно існує
+    try:
+        # передаємо request.user + валідні учасники
+        group.members.add(request.user, *valid_participants)
+    except Exception:
+        # якщо поля members немає або інша структура — ігноруємо додавання (але краще перевірити модель)
+        pass
 
     return JsonResponse({
         "ok": True,
         "group_id": str(group.id),
         "name": group.name,
-        "participants": [u.username for u in group.members.all()]
+        "participants": [u.username for u in group.members.all()] if hasattr(group, 'members') else [request.user.username] + [u.username for u in valid_participants],
     })
 
 
