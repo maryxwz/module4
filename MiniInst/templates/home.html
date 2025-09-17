@@ -47,7 +47,7 @@
                     <img src="{{ story.content.url }}"
                          alt="{{ story.author.username }}"
                          class="w-12 h-12 rounded-full border-2 border-white object-cover"
-                         onclick="window.location.href='/stories/all_stories'">
+                         onclick="window.location.href='/stories/{{ story.id }}'">
                 {% else %}
                     <div class="w-12 h-12 rounded-full border-2 border-white bg-gray-200 flex items-center justify-center text-gray-500">
                         <svg viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6">
