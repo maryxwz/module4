@@ -33,10 +33,7 @@ def home_view(request):
     for post in all_posts:
         if post.author.is_private:
             all_posts.remove(post)
-    all_stories = list(Story.objects.all())
-    for story in all_stories:
-        if story.author.is_private:
-            all_stories.remove(story)
+    all_stories = [story for story in Story.objects.all() if not story.author.is_private and story.is_active()]
     if request.user.is_authenticated:
         blocked_ids = set(
             Block.objects.filter(blocker=request.user).values_list('blocked_id', flat=True)
