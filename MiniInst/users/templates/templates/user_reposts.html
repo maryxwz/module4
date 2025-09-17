@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block title %}Репости {{ user.username }}{% endblock %}
+
+{% block content %}
+<h2>Репости {{ user.username }}</h2>
+{% for repost in reposts %}
+    <div class="card mb-3">
+        <div class="card-body">
+            <p><strong>{{ repost.post.author.username }}</strong></p>
+            <p>{{ repost.post.content }}</p>
+        </div>
+    </div>
+{% empty %}
+    <p>Ще немає репостів.</p>
+{% endfor %}
+{% endblock %}
