@@ -1,41 +1,31 @@
-from django.shortcuts import render, get_object_or_404, redirect
-from .models import Post
-from .forms import PostForm
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import get_object_or_404, redirect, render
+from posts.models import Post, SavedPost
 
-def post_list(request):
-    posts = Post.objects.filter(is_archived=False).order_by("-created_at")
-    for post in posts:
-        post.comment_count = post.comments.filter(is_deleted=False).count()
-    return render(request, "posts/post_list.html", {"posts": posts})
 
-def post_detail(request, pk):
-    post = get_object_or_404(Post, pk=pk, is_archived=False)
-    return render(request, "posts/post_detail.html", {"post": post})
+@login_required
+def save_post(request, post_id):
+    post = get_object_or_404(Post, id=post_id)
+    SavedPost.objects.get_or_create(user=request.user, post=post)
+    return redirect("saved_posts")
 
-def post_create(request):
-    if request.method == "POST":
-        form = PostForm(request.POST, request.FILES)
-        if form.is_valid():
-            form.instance.author = request.user
-            form.save()
-            return redirect("post_list")
+@login_required
+def saved_posts_view(request):
+    saved_posts = SavedPost.objects.filter(user=request.user).select_related("post")
+    return render(request, "saved_posts.html", {"saved_posts": saved_posts})
+@login_required
+@require_POST
+def toggle_like(request, post_id):
+    post = Post.objects.get(id=post_id)
+    like, created = Like.objects.get_or_create(user=request.user, post=post)
+
+    if not created:
+        like.delete()
+        liked = False
     else:
-        form = PostForm()
-    return render(request, "posts/post_form.html", {"form": form})
+        liked = True
 
-def post_update(request, pk):
-    post = get_object_or_404(Post, pk=pk, author=request.user)
-    if request.method == "POST":
-        form = PostForm(request.POST, request.FILES, instance=post)
-        if form.is_valid():
-            form.save()
-            return redirect("post_detail", pk=pk)
-    else:
-        form = PostForm(instance=post)
-    return render(request, "posts/post_form.html", {"form": form})
-
-def post_archive(request, pk):
-    post = get_object_or_404(Post, pk=pk, author=request.user)
-    post.is_archived = True
-    post.save()
-    return redirect("post_list")
+    return JsonResponse({
+        'liked': liked,
+        'likes_count': post.likes.count()
+    })
