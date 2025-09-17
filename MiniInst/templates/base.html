@@ -31,23 +31,23 @@
             <p>© 2025 MiniInst</p>
         </footer> -->
     </div>
-<script>
-    const wsNotifications = new WebSocket(
-        `ws://${window.location.host}/ws/notifications/`
-    );
+<!--<script>-->
+<!--    const wsNotifications = new WebSocket(-->
+<!--        `ws://${window.location.host}/ws/notifications/`-->
+<!--    );-->
 
-    wsNotifications.onmessage = function(e) {
-        const data = JSON.parse(e.data);
-        showToast(data.text);
-    };
+<!--    wsNotifications.onmessage = function(e) {-->
+<!--        const data = JSON.parse(e.data);-->
+<!--        showToast(data.text);-->
+<!--    };-->
 
-    function showToast(text) {
-        const toast = document.createElement("div");
-        toast.className = "toast";
-        toast.innerText = text;
-        document.body.appendChild(toast);
-        setTimeout(() => toast.remove(), 4000);
-    }
-    </script>
+<!--    function showToast(text) {-->
+<!--        const toast = document.createElement("div");-->
+<!--        toast.className = "toast";-->
+<!--        toast.innerText = text;-->
+<!--        document.body.appendChild(toast);-->
+<!--        setTimeout(() => toast.remove(), 4000);-->
+<!--    }-->
+<!--    </script>-->
 </body>
 </html>
