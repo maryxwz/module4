@@ -119,7 +119,9 @@
     {% for post in posts %}
     <div class="post">
       {% if post.image %}
-      <img src="{{ post.image.url }}" alt="Post image">
+      <a href="{% url 'post_detail' post.pk %}">
+        <img src="{{ post.image.url }}"/>
+      </a>
       {% endif %}
     </div>
     {% empty %}
