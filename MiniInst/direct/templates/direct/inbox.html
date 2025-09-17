@@ -69,7 +69,12 @@
   .pin-btn { transition: opacity .12s ease, transform .12s ease; }
   .editable-pinned { cursor: grab; }
   .editable-pinned:active { cursor: grabbing; }
-</style>
+
+  /* suggested users styling */
+  .suggested-heading { font-weight: 600; margin-bottom: .5rem; }
+  .suggested-list li { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; padding: .5rem .75rem; border-radius: .5rem; }
+  .suggested-user-meta { display:flex; align-items:center; gap:.75rem; min-width:0; }
+  </style>
 
   <ul id="conversations-list" class="space-y-2">
     {% for c in conversations %}
@@ -139,6 +144,45 @@
     {% empty %}
       <li class="text-gray-500">Немає чатів</li>
     {% endfor %}
+
+    {% if search_query %}
+      {% if suggested_users %}
+        <li class="bg-white border rounded p-3 shadow-sm">
+          <div>
+            <p class="suggested-heading text-sm text-gray-700">Можна створити чат з:</p>
+            <ul class="suggested-list divide-y divide-gray-100">
+              {% for u in suggested_users %}
+                <li class="flex items-center justify-between py-2">
+                  <div class="suggested-user-meta min-w-0">
+                    {% if u.profile and u.profile.avatar %}
+                      <img src="{{ u.profile.avatar.url }}" alt="" class="h-9 w-9 rounded-full flex-shrink-0">
+                    {% else %}
+                      <div class="h-9 w-9 rounded-full bg-gray-400 flex items-center justify-center text-white font-bold flex-shrink-0">
+                        {{ u.username|first|upper }}
+                      </div>
+                    {% endif %}
+                    <div class="min-w-0 ml-3">
+                      <p class="font-medium truncate">{{ u.username }}</p>
+                      {% if u.bio %}
+                        <p class="text-xs text-gray-500 truncate">{{ u.bio|truncatechars:50 }}</p>
+                      {% endif %}
+                    </div>
+                  </div>
+
+                  <div class="flex-shrink-0 ml-4">
+                    <button type="button"
+                            class="start-chat-btn inline-flex items-center px-3 py-1.5 rounded-full border hover:bg-gray-100 text-sm"
+                            data-user-id="{{ u.id }}">
+                      Написати
+                    </button>
+                  </div>
+                </li>
+              {% endfor %}
+            </ul>
+          </div>
+        </li>
+      {% endif %}
+    {% endif %}
   </ul>
 </div>
 
@@ -189,7 +233,7 @@
       if (newList && currentList) {
         currentList.innerHTML = newList.innerHTML;
         attachPinHandlers();
-        if (editMode) enableEditModeUI(true);
+        enableEditModeUI(false);
       }
 
       if (replaceHistory) {
@@ -365,6 +409,63 @@
 
     attachDragBehaviour();
   }
+
+  async function createDirect(targetId) {
+  if (!targetId) return null;
+
+  try {
+    const resp = await fetch("{% url 'direct:create_direct' %}", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: {
+        "X-CSRFToken": csrftoken,
+      },
+      body: new URLSearchParams({ target_id: targetId })
+    });
+
+    const data = await resp.json().catch(() => null);
+
+    if (!resp.ok) {
+      const msg = (data && data.error) ? data.error : `HTTP ${resp.status}`;
+      console.error("createDirect error:", msg);
+      alert(msg);
+      return null;
+    }
+
+    return data;
+  } catch (err) {
+    console.error("createDirect fetch failed:", err);
+    alert("Не вдалося зв'язатися з сервером. Спробуйте пізніше.");
+    return null;
+  }
+}
+
+document.getElementById('conversations-list').addEventListener('click', async (ev) => {
+  const btn = ev.target.closest('.start-chat-btn');
+  if (!btn) return;
+
+  ev.preventDefault();
+  const userId = btn.dataset.userId;
+  if (!userId) return;
+
+  try {
+    btn.disabled = true;
+    const result = await createDirect(userId);
+    btn.disabled = false;
+
+    if (result && result.direct_id) {
+      window.location.href = `/direct/t/direct/${result.direct_id}/`;
+    } else {
+      const msg = (result && result.error) ? result.error : 'Не вдалося створити чат';
+      alert(msg);
+    }
+  } catch (err) {
+    btn.disabled = false;
+    console.error('start-chat error', err);
+    alert('Сталася помилка. Спробуйте пізніше.');
+  }
+});
+
 
   let wasDragging = false;
 

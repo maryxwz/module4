@@ -7,8 +7,38 @@ from .models import Direct, DirectMessage, GroupChat, GroupMessage, PinnedConver
 from django.contrib.contenttypes.models import ContentType
 from django.views.decorators.http import require_POST
 from users.models.block import Block
+from users.models.custom_user import CustomUser
+from users.models.follow import Follow
 import json
 from django.utils import timezone
+
+@require_POST
+@login_required
+def create_direct(request):
+    target_id = request.POST.get("target_id")
+    if not target_id:
+        return JsonResponse({"error": "target_id не вказаний"}, status=400)
+
+    target_user = get_object_or_404(CustomUser, id=target_id)
+
+    if Block.objects.filter(blocker=target_user, blocked=request.user).exists() or \
+       Block.objects.filter(blocker=request.user, blocked=target_user).exists():
+        return JsonResponse({"error": "Не можна створити чат, один з користувачів заблокований"}, status=403)
+
+    if not Follow.objects.filter(follower=request.user, following=target_user).exists() or \
+       not Follow.objects.filter(follower=target_user, following=request.user).exists():
+        return JsonResponse({"error": "Обидва користувачі повинні бути підписані один на одного"}, status=403)
+
+    direct, created = Direct.objects.get_or_create(
+        user1=min(request.user, target_user, key=lambda u: u.id),
+        user2=max(request.user, target_user, key=lambda u: u.id)
+    )
+
+    return JsonResponse({
+        "ok": True,
+        "created": created,
+        "direct_id": str(direct.id)
+    })
 
 
 @login_required
@@ -45,6 +75,52 @@ def inbox(request):
     positions_map = {}
     for o in ConversationOrder.objects.filter(user=request.user):
         positions_map[(o.content_type_id, str(o.object_id))] = o.position
+
+    following_ids = list(
+        Follow.objects.filter(follower=request.user)
+        .values_list('following_id', flat=True)
+        .distinct()
+    )
+
+    followers_ids = list(
+        Follow.objects.filter(following=request.user)
+        .values_list('follower_id', flat=True)
+        .distinct()
+    )
+
+    direct_partner_ids = list(Direct.objects.filter(user1=request.user).values_list('user2_id', flat=True)) + \
+                         list(Direct.objects.filter(user2=request.user).values_list('user1_id', flat=True))
+    
+    direct_partner_ids = list({int(x) for x in direct_partner_ids if x is not None})
+
+    blocked_by_me_ids = list(Block.objects.filter(blocker=request.user).values_list('blocked_id', flat=True).distinct())
+    blocked_me_ids = list(Block.objects.filter(blocked=request.user).values_list('blocker_id', flat=True).distinct())
+    
+    if not following_ids or not followers_ids:
+        suggested_users_qs = CustomUser.objects.none()
+    else:
+        suggested_users_qs = CustomUser.objects.filter(
+            id__in=following_ids
+        ).filter(
+            id__in=followers_ids
+        )
+
+        if direct_partner_ids:
+            suggested_users_qs = suggested_users_qs.exclude(id__in=direct_partner_ids)
+
+        if blocked_by_me_ids:
+            suggested_users_qs = suggested_users_qs.exclude(id__in=blocked_by_me_ids)
+        if blocked_me_ids:
+            suggested_users_qs = suggested_users_qs.exclude(id__in=blocked_me_ids)
+
+        suggested_users_qs = suggested_users_qs.exclude(id=request.user.id).filter(is_banned=False)
+
+        suggested_users_qs = suggested_users_qs.order_by('username').distinct()
+
+    if q:
+        suggested_users_qs = suggested_users_qs.filter(username__icontains=q)
+    
+    suggested_users = suggested_users_qs
 
     conversations = []
 
@@ -109,6 +185,7 @@ def inbox(request):
     return render(request, 'direct/inbox.html', {
         'conversations': conversations_sorted,
         'search_query': q,
+        'suggested_users': suggested_users,
     })
 
 
