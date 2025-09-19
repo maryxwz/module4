@@ -1,0 +1,31 @@
+{% if entries %}
+  {% for fr in entries %}
+    <div class="follow-item">
+      <div class="avatar">
+        {% if fr.to_user.avatar %}
+          <img src="{{ fr.to_user.avatar.url }}" alt="{{ fr.to_user.username }}">
+        {% else %}
+          <div class="default-avatar"></div>
+        {% endif %}
+      </div>
+      <div class="names" style="flex:1;">
+        <a class="username" href="{% url 'users:profile' fr.to_user.username %}">@{{ fr.to_user.username }}</a>
+        {% if fr.to_user.first_name or fr.to_user.last_name %}
+          <span class="name">{{ fr.to_user.first_name }} {{ fr.to_user.last_name }}</span>
+        {% endif %}
+      </div>
+      <div class="actions" style="display:flex; gap:8px;">
+        <form method="post"
+              hx-post="{% url 'users:follow_request_cancel' fr.to_user.username %}"
+              hx-target="#requestsPanelBody"
+              hx-swap="innerHTML">
+          {% csrf_token %}
+          <input type="hidden" name="render" value="panel">
+          <button type="submit" class="btn-unfollow" style="min-width:120px;">Скасувати</button>
+        </form>
+      </div>
+    </div>
+  {% endfor %}
+{% else %}
+  <div class="loader">Немає вихідних запитів</div>
+{% endif %}

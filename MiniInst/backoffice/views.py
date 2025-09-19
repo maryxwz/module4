@@ -80,7 +80,7 @@ def report_user(request, username):
 
     if current_user == reported_user:
         messages.error(request, 'Ви не можете поскаржитися на себе')
-        return redirect('profile', username=username)
+        return redirect('users:profile', username=username)
 
     form = UserReportForm(request.POST, request.FILES)
 
@@ -88,7 +88,7 @@ def report_user(request, username):
         content_file = form.cleaned_data.get('content')
         if content_file and content_file.size > 10 * 1024 * 1024:
             messages.error(request, 'Розмір файлу не повинен перевищувати 10MB')
-            return redirect('profile', username=username)
+            return redirect('users:profile', username=username)
 
         try:
             report = form.save(commit=False)
@@ -111,4 +111,4 @@ def report_user(request, username):
                 else:
                     messages.error(request, f'Помилка: {error}')
 
-    return redirect('profile', username=username)
+    return redirect('users:profile', username=username)
