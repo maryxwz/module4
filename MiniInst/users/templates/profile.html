@@ -83,55 +83,55 @@
           {% endif %}
 
           {% if profile_user != request.user %}
-          {% include "users/_follow_button.html" with profile_user=profile_user is_following=is_following pending_request=pending_request is_blocked_by_me=is_blocked_by_me blocked_between=blocked_between %}
+            {% include "users/_follow_button.html" with profile_user=profile_user is_following=is_following pending_request=pending_request is_blocked_by_me=is_blocked_by_me blocked_between=blocked_between %}
 
-          <div class="dropdown-menu">
-            <button class="menu-btn" onclick="toggleMenu()" id="menuBtn">
-              <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"/>
-              </svg>
-            </button>
-
-            <div class="dropdown-content" id="dropdownContent">
-              <button onclick="openReportModal()" class="dropdown-item report-btn">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"/>
+            <div class="dropdown-menu">
+              <button class="menu-btn" onclick="toggleMenu()" id="menuBtn">
+                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"/>
                 </svg>
-                Поскаржитися
               </button>
 
-              {% if user.is_authenticated %}
-                {% if is_blocked_by_me %}
-                  <form method="post" action="{% url 'users:unblock_user' profile_user.username %}">
-                    {% csrf_token %}
-                    <button type="submit" class="dropdown-item">
-                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                      </svg>
-                      Розблокувати
-                    </button>
-                  </form>
-                {% else %}
-                  <form method="post" action="{% url 'users:block_user' profile_user.username %}">
-                    {% csrf_token %}
-                    <button type="submit" class="dropdown-item">
-                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636m12.728 12.728L18.364 5.636M5.636 18.364l12.728-12.728"/>
-                      </svg>
-                      Заблокувати
-                    </button>
-                  </form>
+              <div class="dropdown-content" id="dropdownContent">
+                <button onclick="openReportModal()" class="dropdown-item report-btn">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"/>
+                  </svg>
+                  Поскаржитися
+                </button>
+
+                {% if user.is_authenticated %}
+                  {% if is_blocked_by_me %}
+                    <form method="post" action="{% url 'users:unblock_user' profile_user.username %}">
+                      {% csrf_token %}
+                      <button type="submit" class="dropdown-item">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        Розблокувати
+                      </button>
+                    </form>
+                  {% else %}
+                    <form method="post" action="{% url 'users:block_user' profile_user.username %}">
+                      {% csrf_token %}
+                      <button type="submit" class="dropdown-item">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636m12.728 12.728L18.364 5.636M5.636 18.364l12.728-12.728"/>
+                        </svg>
+                        Заблокувати
+                      </button>
+                    </form>
+                  {% endif %}
                 {% endif %}
-              {% endif %}
+              </div>
             </div>
-          </div>
           {% endif %}
         </div>
       </div>
 
       {% if can_view_details %}
         {% if profile_user.bio %}
-        <p class="bio">{{ profile_user.bio }}</p>
+          <p class="bio">{{ profile_user.bio }}</p>
         {% endif %}
 
         <div class="profile-stats">
@@ -145,7 +145,7 @@
             hx-target="#followListBody"
             hx-swap="innerHTML"
           >
-            <strong id="followersCount">{{ followers_count }}</strong> підписників
+            <strong id="stats-followers-count">{{ followers_count }}</strong> підписників
           </div>
 
           <div
@@ -156,7 +156,7 @@
             hx-target="#followListBody"
             hx-swap="innerHTML"
           >
-            <strong id="followingCount">{{ following_count }}</strong> підписок
+            <strong id="stats-following-count">{{ following_count }}</strong> підписок
           </div>
         </div>
       {% elif blocked_between %}
@@ -191,14 +191,15 @@
     {% endfor %}
   </div>
   {% elif profile_user.is_private and not blocked_between %}
-  <div class="private-notice">
-    <svg class="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"/>
-    </svg>
-    <h3>Цей акаунт приватний</h3>
-    <p>Підпішіться, щоб бачити фото та відео користувача {{ profile_user.username }}.</p>
-  </div>
+    <div class="private-notice">
+      <svg class="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"/>
+      </svg>
+      <h3>Цей акаунт приватний</h3>
+      <p>Підпишіться, щоб бачити фото та відео користувача {{ profile_user.username }}.</p>
+    </div>
   {% endif %}
+</div>
 </div>
 
 <div id="followListModal" class="modal-follow" aria-hidden="true">
@@ -809,6 +810,7 @@
   transform: translateY(-1px);
 }
 
+
 .modal-follow {
   display: none;
   position: fixed;
@@ -1017,7 +1019,6 @@
   overflow-y: auto;
 }
 
-/* toasts */
 .toast-wrap {
   position: fixed;
   right: 20px;
@@ -1118,10 +1119,14 @@ document.body.addEventListener('toast', function (e) {
 
 document.body.addEventListener('profile_counts', function (e) {
   const d = e.detail || {};
-  const f1 = document.getElementById('followersCount');
-  const f2 = document.getElementById('followingCount');
-  if (typeof d.followers_count !== 'undefined' && f1) f1.textContent = d.followers_count;
-  if (typeof d.following_count !== 'undefined' && f2) f2.textContent = d.following_count;
+  const dataEl = document.getElementById('profileData');
+  if (!dataEl) return;
+  if (d.username && d.username !== dataEl.dataset.username) return;
+
+  const a = document.getElementById('stats-followers-count');
+  const b = document.getElementById('stats-following-count');
+  if (typeof d.followers !== 'undefined' && a) a.textContent = d.followers;
+  if (typeof d.following !== 'undefined' && b) b.textContent = d.following;
 });
 
 function toggleMenu() {
@@ -1198,6 +1203,7 @@ if (followModalEl) {
   });
 }
 
+/* requests panel open/close + tabs */
 function toggleRequestsPanel() {
   var p = document.getElementById('requestsPanel');
   if (!p) return;

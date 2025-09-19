@@ -1,11 +1,11 @@
-<div class="follow-actions" id="followActions">
+<div id="followActions">
   {% if blocked_between %}
     <button class="btn-follow-disabled" disabled>Дія недоступна</button>
-
   {% else %}
     {% if pending_request %}
       <form
         method="post"
+        action="{% url 'users:follow_request_cancel' profile_user.username %}"
         hx-post="{% url 'users:follow_request_cancel' profile_user.username %}"
         hx-target="#followActions"
         hx-swap="outerHTML"
@@ -14,11 +14,11 @@
         <input type="hidden" name="render" value="button">
         <button type="submit" class="btn-unfollow">Скасувати запит</button>
       </form>
-
     {% else %}
       {% if is_following %}
         <form
           method="post"
+          action="{% url 'users:unfollow_user' profile_user.username %}"
           hx-post="{% url 'users:unfollow_user' profile_user.username %}"
           hx-target="#followActions"
           hx-swap="outerHTML"
@@ -29,6 +29,7 @@
       {% else %}
         <form
           method="post"
+          action="{% url 'users:follow_user' profile_user.username %}"
           hx-post="{% url 'users:follow_user' profile_user.username %}"
           hx-target="#followActions"
           hx-swap="outerHTML"

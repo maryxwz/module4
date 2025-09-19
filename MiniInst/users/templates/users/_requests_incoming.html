@@ -16,6 +16,7 @@
       </div>
       <div class="actions" style="display:flex; gap:8px;">
         <form method="post"
+              action="{% url 'users:follow_request_accept' fr.pk %}"
               hx-post="{% url 'users:follow_request_accept' fr.pk %}"
               hx-target="#requestsPanelBody"
               hx-swap="innerHTML">
@@ -23,6 +24,7 @@
           <button type="submit" class="btn-follow" style="min-width:100px;">Підтвердити</button>
         </form>
         <form method="post"
+              action="{% url 'users:follow_request_reject' fr.pk %}"
               hx-post="{% url 'users:follow_request_reject' fr.pk %}"
               hx-target="#requestsPanelBody"
               hx-swap="innerHTML">
