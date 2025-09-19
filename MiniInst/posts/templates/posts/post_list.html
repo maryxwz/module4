@@ -1,41 +1,89 @@
+{% extends 'base.html' %}
+
+{% block title %}Репости користувача{% endblock %}
+
+{% block content %}
 {% load static %}
-<!DOCTYPE html>
-<html lang="uk">
-<head>
-    <meta charset="UTF-8">
-    <title>Усі пости</title>
-    <link rel="stylesheet" href="{% static 'comments/modal_comments.css' %}">
-    <script defer src="{% static 'comments/modal_comments.js' %}"></script>
-</head>
-<body>
-    <h1>Усі пости</h1>
+<link rel="stylesheet" href="{% static 'comments/modal_comments.css' %}">
+<script defer src="{% static 'comments/modal_comments.js' %}"></script>
 
-    <p><a href="{% url 'post_create' %}">➕ Створити новий пост</a></p>
+<h1>Репости {{ request.user.username }}</h1>
+<p><a href="{% url 'post_create' %}">➕ Створити новий пост</a></p>
+<hr>
 
-    <hr>
+{% for repost in reposts %}
+<div style="margin-bottom: 20px; border-bottom:1px solid #ddd; padding-bottom:10px;">
+    <p><strong>{{ repost.post.author.username }}</strong> — {{ repost.post.created_at|date:"Y-m-d H:i" }}</p>
 
-    {% for post in posts %}
-      <div style="margin-bottom: 20px;">
-        <p><strong>{{ post.author.username }}</strong> — {{ post.created_at|date:"Y-m-d H:i" }}</p>
+    {% if repost.post.image %}
+      <img src="{{ repost.post.image.url }}" width="300" alt="">
+    {% endif %}
 
-        {% if post.image %}
-          <img src="{{ post.image.url }}" width="300" alt="">
-        {% endif %}
+    <p>{{ repost.post.caption }}</p>
 
-        <p>{{ post.caption }}</p>
+    <p>
+      <a href="{% url 'post_detail' repost.post.pk %}">Детальніше</a> |
+      {% if repost.post.author == request.user %}
+        <a href="{% url 'post_update' repost.post.pk %}">Редагувати</a> |
+      {% endif %}
+      <a href="#" data-open-comments data-post-id="{{ repost.post.id }}">
+          Коментарі ({{ repost.post.comment_count }})
+      </a> |
+      <a href="#"
+         class="repost-btn"
+         data-post-id="{{ repost.post.id }}"
+         data-url="{% url 'posts:repost_post' repost.post.id %}">
+         Репост ({{ repost.post.repost_count }})
+      </a>
+    </p>
+</div>
+{% empty %}
+<p>Репостів поки немає 👀</p>
+{% endfor %}
 
-        <p>
-          <a href="{% url 'post_detail' post.pk %}">Детальніше</a> |
-          <a href="{% url 'post_update' post.pk %}">Редагувати</a> |
-          <a href="#" data-open-comments data-post-id="{{ post.id }}">
-              Коментарі ({{ post.comment_count }})
-          </a>
-        </p>
-      </div>
-    {% empty %}
-      <p>Постів поки немає 👀</p>
-    {% endfor %}
-</body>
-</html>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    document.querySelectorAll(".repost-btn").forEach(button => {
+        button.addEventListener("click", function(e) {
+            e.preventDefault();
+            const url = this.dataset.url;
+            const span = this.querySelector("span");
+            const currentCount = parseInt(span.textContent.match(/\d+/)) || 0;
 
+            fetch(url, {
+                method: "POST",
+                headers: {
+                    "X-CSRFToken": getCookie("csrftoken"),
+                    "X-Requested-With": "XMLHttpRequest"
+                },
+                credentials: "same-origin"
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === "reposted") {
+                    span.textContent = `Репост (${currentCount + 1})`;
+                } else if (data.status === "unreposted") {
+                    span.textContent = `Репост (${currentCount - 1})`;
+                }
+            });
+        });
+    });
+});
 
+// Функція для отримання CSRF токена
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== "") {
+        const cookies = document.cookie.split(";");
+        for (let cookie of cookies) {
+            cookie = cookie.trim();
+            if (cookie.startsWith(name + "=")) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+{% endblock %}
