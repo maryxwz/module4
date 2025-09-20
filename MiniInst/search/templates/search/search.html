@@ -23,7 +23,7 @@
     {% if q %}
       {% if exact_user %}
         <div class="srch__section">
-          <a class="usercard" href="{% url 'profile' exact_user.username %}">
+          <a class="usercard" href="{% url 'users:profile' exact_user.username %}">
             {% if exact_user.avatar %}
               <img class="usercard__avatar" src="{{ exact_user.avatar.url }}" alt="@{{ exact_user.username }}">
             {% else %}
@@ -51,7 +51,7 @@
           <ul class="list">
             {% for u in suggestions %}
               <li>
-                <a class="usercard" href="{% url 'profile' u.username %}">
+                <a class="usercard" href="{% url 'users:profile' u.username %}">
                   {% if u.avatar %}
                     <img class="usercard__avatar" src="{{ u.avatar.url }}" alt="@{{ u.username }}">
                   {% else %}
@@ -83,7 +83,7 @@
                 <li>
                   <div class="postcard">
                     <div class="postcard__meta">
-                      <a class="usercard usercard--inline" href="{% url 'profile' p.author.username %}">
+                      <a class="usercard usercard--inline" href="{% url 'users:profile' p.author.username %}">
                         {% if p.author.avatar %}
                           <img class="usercard__avatar" src="{{ p.author.avatar.url }}" alt="@{{ p.author.username }}">
                         {% else %}
@@ -126,11 +126,3 @@
   </section>
 </main>
 {% endblock content %}
-
-
-
-
-
-
-
-

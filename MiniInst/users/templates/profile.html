@@ -1,5 +1,7 @@
 {% extends "base.html" %}
 {% block content %}
+<script src="https://unpkg.com/htmx.org@1.9.12"></script>
+
 {% if messages %}
 <div class="messages-container">
   {% for message in messages %}
@@ -10,6 +12,11 @@
   {% endfor %}
 </div>
 {% endif %}
+
+<div id="profileData"
+     data-username="{{ profile_user.username }}"
+     data-is-own="{% if request.user.id == profile_user.id %}true{% else %}false{% endif %}">
+</div>
 
 <div class="profile-page">
   <div class="profile-header">
@@ -28,55 +35,62 @@
     <div class="profile-info">
       <div class="profile-header-top">
         <h2>{{ profile_user.username }}</h2>
-                <div class="profile-actions">
+
+        <div class="profile-actions">
+          {% if profile_user == request.user %}
+            <div class="requests-chip"
+                 onclick="toggleRequestsPanel()"
+                 hx-get="{% url 'users:follow_requests_incoming' profile_user.username %}"
+                 hx-target="#requestsPanelBody"
+                 hx-swap="innerHTML">
+              <span class="chip-dot"></span>
+              Запити
+            </div>
+          {% endif %}
+
           {% if profile_user != request.user %}
-          <div class="follow-actions">
-            <button class="btn-follow-disabled">Підписатися</button>
-          </div>
+            {% include "users/_follow_button.html" with profile_user=profile_user is_following=is_following pending_request=pending_request is_blocked_by_me=is_blocked_by_me blocked_between=blocked_between %}
 
-          <div class="dropdown-menu">
-            <button class="menu-btn" onclick="toggleMenu()" id="menuBtn">
-              <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"/>
-              </svg>
-            </button>
-
-            <div class="dropdown-content" id="dropdownContent">
-              <button onclick="openReportModal()" class="dropdown-item report-btn">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"/>
+            <div class="dropdown-menu">
+              <button class="menu-btn" onclick="toggleMenu()" id="menuBtn">
+                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"/>
                 </svg>
-                Поскаржитися
               </button>
 
-              {% if user.is_authenticated %}
-                {% if is_blocked_by_me %}
-                  <form method="post" action="{% url 'unblock_user' profile_user.username %}">
-                    {% csrf_token %}
-                    <button type="submit" class="dropdown-item">
-                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                      </svg>
-                      Розблокувати
-                    </button>
-                  </form>
-                {% else %}
-                  <form method="post" action="{% url 'block_user' profile_user.username %}">
-                    {% csrf_token %}
-                    <button type="submit" class="dropdown-item">
-                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                              d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636m12.728 12.728L18.364 5.636M5.636 18.364l12.728-12.728"/>
-                      </svg>
-                      Заблокувати
-                    </button>
-                  </form>
+              <div class="dropdown-content" id="dropdownContent">
+                <button onclick="openReportModal()" class="dropdown-item report-btn">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"/>
+                  </svg>
+                  Поскаржитися
+                </button>
+
+                {% if user.is_authenticated %}
+                  {% if is_blocked_by_me %}
+                    <form method="post" action="{% url 'users:unblock_user' profile_user.username %}">
+                      {% csrf_token %}
+                      <button type="submit" class="dropdown-item">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        Розблокувати
+                      </button>
+                    </form>
+                  {% else %}
+                    <form method="post" action="{% url 'users:block_user' profile_user.username %}">
+                      {% csrf_token %}
+                      <button type="submit" class="dropdown-item">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636m12.728 12.728L18.364 5.636M5.636 18.364l12.728-12.728"/>
+                        </svg>
+                        Заблокувати
+                      </button>
+                    </form>
+                  {% endif %}
                 {% endif %}
-              {% endif %}
+              </div>
             </div>
-          </div>
           {% endif %}
         </div>
       </div>
@@ -87,15 +101,34 @@
         {% endif %}
 
         <div class="profile-stats">
-          <div><strong>{{ posts_count }}</strong> публікацій</div>
-          <div><strong>{{ followers_count }}</strong> підписників</div>
-          <div><strong>{{ following_count }}</strong> підписок</div>
+          <div><strong><span id="postsCount">{{ posts_count }}</span></strong> публікацій</div>
+
+          <div
+            id="stats-followers"
+            class="stat-link"
+            onclick="openFollowModal('followers')"
+            hx-get="{% url 'users:followers_list' profile_user.username %}"
+            hx-target="#followListBody"
+            hx-swap="innerHTML"
+          >
+            <strong><span id="followersCount">{{ followers_count }}</span></strong> підписників
+          </div>
+
+          <div
+            id="stats-following"
+            class="stat-link"
+            onclick="openFollowModal('following')"
+            hx-get="{% url 'users:following_list' profile_user.username %}"
+            hx-target="#followListBody"
+            hx-swap="innerHTML"
+          >
+            <strong><span id="followingCount">{{ following_count }}</span></strong> підписок
+          </div>
         </div>
       {% elif blocked_between %}
         <div class="private-notice">
           <svg class="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"/>
           </svg>
           <h3>Доступ обмежено</h3>
           <p>Ви не можете переглядати профіль, оскільки між вами встановлено блокування.</p>
@@ -109,16 +142,13 @@
     {% for post in posts %}
     <div class="post">
       {% if post.image %}
-      <a href="{% url 'posts:post_detail' post.pk %}">
-        <img src="{{ post.image.url }}"/>
-      </a>
+      <img src="{{ post.image.url }}" alt="Post image">
       {% endif %}
     </div>
     {% empty %}
     <div class="no-posts">
       <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2z"/>
       </svg>
       <p>Поки що немає публікацій</p>
     </div>
@@ -127,13 +157,57 @@
   {% elif profile_user.is_private and not blocked_between %}
   <div class="private-notice">
     <svg class="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"/>
     </svg>
     <h3>Цей акаунт приватний</h3>
     <p>Підпішіться, щоб бачити фото та відео користувача {{ profile_user.username }}.</p>
   </div>
   {% endif %}
+</div>
+
+<div id="followListModal" class="modal-follow" aria-hidden="true">
+  <div class="modal-follow-content">
+    <div class="modal-follow-header">
+      <h3 id="followListTitle">Список</h3>
+      <button class="close-btn" onclick="closeFollowModal()">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+    <div id="followListBody" class="modal-follow-body">
+      <div class="loader">Завантаження…</div>
+    </div>
+  </div>
+</div>
+
+<div id="requestsPanel" class="requests-panel">
+  <div class="requests-panel-header">
+    <div class="requests-tabs">
+      <button id="tabIncoming"
+              class="requests-tab active"
+              hx-get="{% url 'users:follow_requests_incoming' profile_user.username %}"
+              hx-target="#requestsPanelBody"
+              hx-swap="innerHTML">
+        Вхідні
+      </button>
+      <button id="tabOutgoing"
+              class="requests-tab"
+              hx-get="{% url 'users:follow_requests_outgoing' profile_user.username %}"
+              hx-target="#requestsPanelBody"
+              hx-swap="innerHTML">
+        Вихідні
+      </button>
+    </div>
+    <button class="requests-close" onclick="toggleRequestsPanel()">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+      </svg>
+    </button>
+  </div>
+  <div id="requestsPanelBody" class="requests-panel-body">
+    <div class="loader">Завантаження…</div>
+  </div>
 </div>
 
 <div id="reportModal" class="modal">
@@ -142,8 +216,7 @@
       <h3>Поскаржитися на {{ profile_user.username }}</h3>
       <button class="close-btn" onclick="closeReportModal()">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M6 18L18 6M6 6l12 12"/>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
         </svg>
       </button>
     </div>
@@ -235,7 +308,7 @@
 
 @keyframes slideInRight {
   from { transform: translateX(100%); opacity: 0; }
-  to { transform: translateX(0); opacity: 1; }
+  to   { transform: translateX(0);   opacity: 1; }
 }
 
 .form-errors {
@@ -353,18 +426,58 @@
   color: #8e8e8e;
 }
 
-.btn-follow-disabled,
-.block-btn-disabled {
+.stat-link {
+  cursor: pointer;
+  user-select: none;
+}
+
+.btn-follow,
+.btn-unfollow,
+.btn-follow-disabled {
+  border: none;
+  padding: 10px 18px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 14px;
+  min-width: 140px;
+  cursor: pointer;
+  transition: transform .06s ease, box-shadow .15s ease, background-color .15s ease, opacity .15s ease;
+  box-shadow: 0 2px 6px rgba(0,0,0,.08);
+}
+
+.btn-follow {
+  background: #0095f6;
+  color: #fff;
+}
+
+.btn-follow:hover {
+  box-shadow: 0 6px 14px rgba(0,149,246,.25);
+}
+
+.btn-follow:active {
+  transform: translateY(1px) scale(0.99);
+  box-shadow: 0 2px 6px rgba(0,0,0,.12);
+}
+
+.btn-unfollow {
+  background: #ef4444;
+  color: #fff;
+}
+
+.btn-unfollow:hover {
+  box-shadow: 0 6px 14px rgba(239,68,68,.25);
+}
+
+.btn-unfollow:active {
+  transform: translateY(1px) scale(0.99);
+  box-shadow: 0 2px 6px rgba(0,0,0,.12);
+}
+
+.btn-follow-disabled {
   background: #dbdbdb;
   color: #8e8e8e;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 4px;
-  font-weight: 600;
-  font-size: 14px;
   cursor: not-allowed;
-  min-width: 120px;
-  opacity: 0.6;
+  opacity: .7;
 }
 
 .dropdown-menu {
@@ -409,7 +522,7 @@
 
 @keyframes dropdownFade {
   from { opacity: 0; transform: translateY(-10px); }
-  to { opacity: 1; transform: translateY(0); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 .dropdown-item {
@@ -523,7 +636,7 @@
 
 @keyframes modalFadeIn {
   from { opacity: 0; }
-  to { opacity: 1; }
+  to   { opacity: 1; }
 }
 
 .modal-content {
@@ -539,7 +652,7 @@
 
 @keyframes modalSlideIn {
   from { transform: scale(0.9) translateY(-10px); opacity: 0; }
-  to { transform: scale(1) translateY(0); opacity: 1; }
+  to   { transform: scale(1) translateY(0);     opacity: 1; }
 }
 
 .modal-header {
@@ -669,6 +782,245 @@
   transform: translateY(-1px);
 }
 
+
+.modal-follow {
+  display: none;
+  position: fixed;
+  z-index: 2100;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(2px);
+}
+
+.modal-follow.show {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: modalFadeIn 0.25s ease-out;
+}
+
+.modal-follow-content {
+  background: #fff;
+  border-radius: 12px;
+  width: 92%;
+  max-width: 520px;
+  max-height: 80vh;
+  overflow: hidden;
+  box-shadow: 0 20px 25px -5px rgba(0,0,0,.1), 0 10px 10px -5px rgba(0,0,0,.04);
+  animation: modalSlideIn 0.25s ease-out;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-follow-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid #efefef;
+}
+
+.modal-follow-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: #262626;
+}
+
+.modal-follow-body {
+  padding: 8px 0;
+  overflow-y: auto;
+  max-height: calc(80vh - 58px);
+}
+
+.follow-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+}
+
+.follow-item:hover {
+  background: #fafafa;
+}
+
+.follow-item .avatar {
+  width: 40px;
+  height: 40px;
+}
+
+.follow-item .avatar img,
+.follow-item .default-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  border: 1px solid #e5e7eb;
+}
+
+.follow-item .names {
+  display: flex;
+  flex-direction: column;
+}
+
+.follow-item .username {
+  font-weight: 600;
+  color: #111827;
+}
+
+.follow-item .name {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.loader {
+  padding: 18px 16px;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.requests-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: #f3f4f6;
+  color: #111827;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background-color .2s, transform .06s;
+  box-shadow: 0 1px 3px rgba(0,0,0,.06);
+}
+
+.requests-chip:hover {
+  background: #e5e7eb;
+}
+
+.requests-chip:active {
+  transform: translateY(1px);
+}
+
+.chip-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #10b981;
+}
+
+.requests-panel {
+  position: fixed;
+  right: 24px;
+  top: 90px;
+  width: 360px;
+  max-height: 60vh;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 12px 30px rgba(0,0,0,.12);
+  display: none;
+  flex-direction: column;
+  z-index: 2200;
+  overflow: hidden;
+}
+
+.requests-panel.show {
+  display: flex;
+  animation: panelIn .18s ease-out;
+}
+
+@keyframes panelIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.requests-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-bottom: 1px solid #efefef;
+}
+
+.requests-tabs {
+  display: inline-flex;
+  background: #f3f4f6;
+  border-radius: 10px;
+  padding: 4px;
+  gap: 4px;
+}
+
+.requests-tab {
+  background: transparent;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #374151;
+  cursor: pointer;
+  transition: background-color .15s, color .15s;
+}
+
+.requests-tab.active {
+  background: #ffffff;
+  color: #111827;
+  box-shadow: 0 1px 2px rgba(0,0,0,.06);
+}
+
+.requests-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 999px;
+  color: #6b7280;
+  transition: background-color .15s, color .15s;
+}
+
+.requests-close:hover {
+  background: #f3f4f6;
+  color: #111827;
+}
+
+.requests-panel-body {
+  padding: 8px 0;
+  overflow-y: auto;
+}
+
+.toast-wrap {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 4000;
+  pointer-events: none;
+}
+
+.toast {
+  min-width: 220px;
+  max-width: 320px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 14px;
+  line-height: 1.25;
+  background: #f3f4f6;
+  color: #111827;
+  box-shadow: 0 6px 16px rgba(0,0,0,.08);
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity .18s ease, transform .18s ease;
+}
+
+.toast--success { background: #d1fae5; color: #065f46; }
+.toast--danger  { background: #fee2e2; color: #7f1d1d; }
+.toast.show     { opacity: 1; transform: translateY(0); }
+
 @media (max-width: 768px) {
   .profile-page {
     margin-left: 0;
@@ -700,6 +1052,15 @@
   .default-avatar {
     width: 120px;
     height: 120px;
+  }
+
+  .requests-panel {
+    right: 12px;
+    left: 12px;
+    width: auto;
+    top: auto;
+    bottom: 16px;
+    max-height: 55vh;
   }
 }
 
@@ -750,94 +1111,122 @@
 </style>
 
 <script>
-function toggleMenu() {
-  const dropdown = document.getElementById('dropdownContent');
-  dropdown.classList.toggle('show');
-}
+document.body.addEventListener('toast', function (e) {
+  const d = e.detail || {};
+  const wrap = document.getElementById('toastWrap');
+  const t = document.createElement('div');
+  const type = (d.type || 'success').toLowerCase();
+  t.className = 'toast ' + (type === 'success' ? 'toast--success' : 'toast--danger');
+  t.textContent = d.text || 'Готово';
+  wrap.appendChild(t);
+  setTimeout(() => t.classList.add('show'), 10);
+  setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 200); }, 2800);
+});
 
+document.body.addEventListener('profile_counts', function (e) {
+  const d = e.detail || {};
+  const f1 = document.getElementById('followersCount');
+  const f2 = document.getElementById('followingCount');
+  if (typeof d.followers_count !== 'undefined' && f1) f1.textContent = d.followers_count;
+  if (typeof d.following_count !== 'undefined' && f2) f2.textContent = d.following_count;
+});
+
+function toggleMenu() {
+  var dropdown = document.getElementById('dropdownContent');
+  if (dropdown) dropdown.classList.toggle('show');
+}
 document.addEventListener('click', function(event) {
-  const menu = document.getElementById('menuBtn');
-  const dropdown = document.getElementById('dropdownContent');
-  if (!menu.contains(event.target) && !dropdown.contains(event.target)) {
+  var menu = document.getElementById('menuBtn');
+  var dropdown = document.getElementById('dropdownContent');
+  if (menu && dropdown && !menu.contains(event.target) && !dropdown.contains(event.target)) {
     dropdown.classList.remove('show');
   }
 });
 
 function openReportModal() {
-  document.getElementById('reportModal').classList.add('show');
+  var m = document.getElementById('reportModal');
+  if (!m) return;
+  m.classList.add('show');
   document.body.style.overflow = 'hidden';
-  document.getElementById('dropdownContent').classList.remove('show');
+  var dd = document.getElementById('dropdownContent');
+  if (dd) dd.classList.remove('show');
 }
 
 function closeReportModal() {
-  document.getElementById('reportModal').classList.remove('show');
+  var m = document.getElementById('reportModal');
+  if (!m) return;
+  m.classList.remove('show');
   document.body.style.overflow = 'auto';
-  document.getElementById('reportForm').reset();
+  var form = document.getElementById('reportForm');
+  if (form) form.reset();
+}
+var reportModalEl = document.getElementById('reportModal');
+if (reportModalEl) {
+  reportModalEl.addEventListener('click', function(event) {
+    if (event.target === reportModalEl) {
+      closeReportModal();
+    }
+  });
 }
 
-document.getElementById('reportModal').addEventListener('click', function(event) {
-  if (event.target === this) {
-    closeReportModal();
-  }
-});
-
-document.getElementById('reportForm').addEventListener('submit', function(e) {
-  clearFormErrors();
-
-  const description = document.getElementById('{{ report_form.description.id_for_label }}').value.trim();
-  const fileInput = document.getElementById('{{ report_form.content.id_for_label }}');
-  let hasErrors = false;
-
-  if (!description) {
-    showFieldError('description', "Опис скарги є обов'язковим");
-    hasErrors = true;
-  } else if (description.length < 10) {
-    showFieldError('description', 'Опис скарги має містити принаймні 10 символів');
-    hasErrors = true;
-  }
-
-  if (fileInput.files.length > 0) {
-    const file = fileInput.files[0];
-    if (file.size > 10 * 1024 * 1024) {
-      showFieldError('content', 'Розмір файлу не повинен перевищувати 10MB');
-      hasErrors = true;
+function openFollowModal(kind) {
+  var titleEl = document.getElementById('followListTitle');
+  var dataEl = document.getElementById('profileData');
+  var isOwn = dataEl && dataEl.dataset && dataEl.dataset.isOwn === 'true';
+  if (titleEl) {
+    if (kind === 'following') {
+      titleEl.textContent = isOwn ? 'Ваші підписки' : 'Підписки користувача @{{ profile_user.username|escapejs }}';
+    } else {
+      titleEl.textContent = isOwn ? 'Ваші підписники' : 'Підписники користувача @{{ profile_user.username|escapejs }}';
     }
   }
+  var m = document.getElementById('followListModal');
+  if (!m) return;
+  m.classList.add('show');
+  document.body.style.overflow = 'hidden';
+}
+function closeFollowModal() {
+  var m = document.getElementById('followListModal');
+  if (!m) return;
+  m.classList.remove('show');
+  document.body.style.overflow = 'auto';
+}
+var followModalEl = document.getElementById('followListModal');
+if (followModalEl) {
+  followModalEl.addEventListener('click', function(e) {
+    if (e.target === followModalEl) closeFollowModal();
+  });
+}
 
-  if (hasErrors) {
-    e.preventDefault();
-    return;
+function toggleRequestsPanel() {
+  var p = document.getElementById('requestsPanel');
+  if (!p) return;
+  if (p.classList.contains('show')) {
+    p.classList.remove('show');
+  } else {
+    p.classList.add('show');
+    var btnIncoming = document.getElementById('tabIncoming');
+    if (btnIncoming) btnIncoming.click();
   }
+}
 
-  const submitBtn = document.querySelector('.btn-submit');
-  submitBtn.textContent = 'Надсилання...';
-  submitBtn.disabled = true;
+document.addEventListener('click', function(e) {
+  var panel = document.getElementById('requestsPanel');
+  var chip = document.querySelector('.requests-chip');
+  if (!panel) return;
+  if (panel.classList.contains('show')) {
+    if (!panel.contains(e.target) && (!chip || !chip.contains(e.target))) {
+      panel.classList.remove('show');
+    }
+  }
 });
 
-function showFieldError(fieldName, message) {
-  const errorDiv = document.getElementById(fieldName + '-error');
-  const descriptionInput = document.getElementById('{{ report_form.description.id_for_label }}');
-
-  if (fieldName === 'content') {
-    const fileInput = document.getElementById('{{ report_form.content.id_for_label }}');
-    fileInput.classList.add('error');
-  } else {
-    descriptionInput.classList.add('error');
+document.addEventListener('click', function(e) {
+  if (e.target && e.target.classList && e.target.classList.contains('requests-tab')) {
+    document.querySelectorAll('.requests-tab').forEach(function(btn){ btn.classList.remove('active'); });
+    e.target.classList.add('active');
   }
-
-  errorDiv.textContent = message;
-  errorDiv.classList.add('show');
-}
-
-function clearFormErrors() {
-  document.querySelectorAll('.error').forEach(el => el.classList.remove('error'));
-  document.querySelectorAll('.field-error').forEach(el => {
-    el.classList.remove('show');
-    el.textContent = '';
-  });
-  const formErrors = document.getElementById('form-errors');
-  formErrors.style.display = 'none';
-}
+});
 
 document.addEventListener('DOMContentLoaded', function() {
   setTimeout(function() {

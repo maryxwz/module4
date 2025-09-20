@@ -1,50 +1,58 @@
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render
 from django.db.models import Q
 from django.contrib.auth import get_user_model
-from django.apps import apps
 import re
 
-
 User = get_user_model()
-Follow = apps.get_model('users', 'Follow')
-Post = apps.get_model('posts', 'Post')
-
 
 def search_view(request):
-    q = (request.GET.get("q") or "").strip()
+    q_raw = (request.GET.get("q") or "").strip()
 
     exact_user = None
     suggestions = []
-
     hashtag_query = None
     hashtag_posts = []
 
-    if q:
-        try:
-            exact_user = User.objects.get(username__iexact=q)
-        except User.DoesNotExist:
-            exact_user = None
+    if q_raw:
+        q = q_raw.strip()
+        if q.startswith("@"):
+            q = q[1:].strip()
 
-        user_qs = User.objects.filter(
-            Q(username__icontains=q) |
-            Q(first_name__icontains=q) |
-            Q(last_name__icontains=q)
-        ).distinct().order_by('username')
+        if q:
+            try:
+                exact_user = User.objects.get(username__iexact=q)
+            except User.DoesNotExist:
+                exact_user = None
 
-        if exact_user:
-            user_qs = user_qs.exclude(pk=exact_user.pk)
-        suggestions = list(user_qs[:10])
+            user_qs = User.objects.filter(
+                Q(username__icontains=q) |
+                Q(first_name__icontains=q) |
+                Q(last_name__icontains=q)
+            ).order_by("username").distinct()
 
-        if q.startswith("#") and len(q) > 1:
-            hashtag_query = q
-            qs = Post.objects.filter(caption__icontains=hashtag_query).select_related("author")
-            tag_escaped = re.escape(hashtag_query)
-            pattern = re.compile(rf"(^|[^\w#]){tag_escaped}(\b|$)", re.IGNORECASE)
+            if exact_user:
+                user_qs = user_qs.exclude(pk=exact_user.pk)
 
-            hashtag_posts = [p for p in qs if (p.caption and pattern.search(p.caption))]
+            suggestions = list(user_qs[:10])
+
+        if q_raw.startswith("#") and len(q_raw) > 1:
+            hashtag_query = q_raw
+            try:
+                from posts.models.post import Post
+            except Exception:
+                Post = None
+
+            if Post is not None:
+                tag_escaped = re.escape(hashtag_query)
+                pattern = re.compile(rf"(^|[^\w#]){tag_escaped}(\b|$)", re.IGNORECASE)
+                qs = Post.objects.select_related("author").all()
+                hashtag_posts = [
+                    p for p in qs
+                    if p.caption and pattern.search(p.caption)
+                ]
 
     context = {
-        "q": q,
+        "q": q_raw,
         "exact_user": exact_user,
         "suggestions": suggestions,
         "hashtag_query": hashtag_query,

@@ -2,8 +2,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from posts.models import Post, Like
-from search.views import Follow
-from users.models import CustomUser
+from users.models import CustomUser, Follow
 from .models.post import SavedPost, Repost
 from django.shortcuts import render, get_object_or_404, redirect
 from .models import Post
@@ -40,14 +39,6 @@ def toggle_like(request, post_id):
         'likes_count': post.likes.count()
     })
 
-
-def post_list(request):
-    posts = Post.objects.filter(is_archived=False).order_by("-created_at")
-    for post in posts:
-        post.comment_count = post.comments.filter(is_deleted=False).count()
-    return render(request, "posts/post_list.html", {"posts": posts})
-
-
 def post_detail(request, pk):
     post = get_object_or_404(Post, pk=pk, is_archived=False)
     return render(request, "posts/post_detail.html", {"post": post})
@@ -59,7 +50,7 @@ def post_create(request):
         if form.is_valid():
             form.instance.author = request.user
             form.save()
-            return redirect("post_list")
+            return redirect("/")
     else:
         form = PostForm()
     return render(request, "posts/post_form.html", {"form": form})
