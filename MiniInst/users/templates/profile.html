@@ -174,16 +174,18 @@
     </form>
   </div>
 </div>
-  <form method="post" action="{% url 'logout' %}" class="logout-form" style="margin-left: 95%">
-        {% csrf_token %}
-          <button type="submit" class="logout-btn">
-            <svg xmlns="http://www.w3.org/2000/svg" class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+{% if profile_user == request.user %}
+  <form method="post" action="{% url 'logout' %}" class="logout-form-topright">
+      {% csrf_token %}
+      <button type="submit" class="logout-btn">
+          <svg xmlns="http://www.w3.org/2000/svg" class="logout-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                     d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H7a2 2 0 01-2-2V7a2 2 0 012-2h4a2 2 0 012 2v1"/>
-            </svg>
-            LOGOUT
-          </button>
-        </form>
+          </svg>
+          Вийти
+      </button>
+  </form>
+{% endif %}
 <style>
 .messages-container {
   position: fixed;
@@ -710,6 +712,40 @@
     gap: 20px;
     font-size: 14px;
   }
+}
+.logout-form-topright {
+    position: fixed;       /* фіксоване положення на екрані */
+    top: 0;                /* приклеїли до верху */
+    right: 0;              /* приклеїли до правого краю */
+    margin: 10px;          /* відступ від країв */
+    z-index: 9999;         /* щоб бути поверх всього */
+}
+
+.logout-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background-color: #dc2626;
+    color: white;
+    padding: 8px 12px;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.15);
+}
+
+.logout-btn:hover {
+    background-color: #b91c1c;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 8px rgba(0,0,0,0.2);
+}
+
+.logout-icon {
+    width: 18px;
+    height: 18px;
 }
 </style>
 
