@@ -1,7 +1,12 @@
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect, get_object_or_404
+from django.utils import timezone
 from .forms import StoriesForms
 from .models.story import Story
+
+
+def archive_expired_stories():
+    Story.objects.filter(expires_at__lt=timezone.now(),is_archived=False).update(is_archived=True)
 
 
 @login_required
@@ -20,8 +25,18 @@ def add_story(request):
 
 @login_required
 def all_stories(request):
-    active_stories = Story.objects.filter(author=request.user, is_archived=False).order_by('-created_at')
-    archived_stories = Story.objects.filter(author=request.user, is_archived=True).order_by('-created_at')
+    archive_expired_stories()
+
+    active_stories = Story.objects.filter(
+        author=request.user,
+        is_archived=False
+    ).order_by('-created_at')
+
+    archived_stories = Story.objects.filter(
+        author=request.user,
+        is_archived=True
+    ).order_by('-created_at')
+
     return render(request,
                   'all_stories.html',
                   {'active_stories': active_stories,
@@ -31,7 +46,10 @@ def all_stories(request):
 @login_required
 def view_story(request, id):
     story = get_object_or_404(Story, id=id)
+
     if not story.is_active():
-        redirect('/')
+        story.is_archived = True
+        story.save()
+        return redirect('/')
     else:
         return render(request, 'current_story.html', {'story': story})
