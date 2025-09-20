@@ -2,8 +2,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from posts.models import Post, Like
-from search.views import Follow
-from users.models import CustomUser
+from users.models import CustomUser, Follow
 from .models.post import SavedPost, Repost
 from django.shortcuts import render, get_object_or_404, redirect
 from .models import Post

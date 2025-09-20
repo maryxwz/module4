@@ -8,7 +8,7 @@
 <script defer src="{% static 'comments/modal_comments.js' %}"></script>
 
 <h1>Репости {{ request.user.username }}</h1>
-<p><a href="{% url 'post_create' %}">➕ Створити новий пост</a></p>
+<p><a href="{% url 'posts:post_create' %}">➕ Створити новий пост</a></p>
 <hr>
 
 {% for repost in reposts %}
