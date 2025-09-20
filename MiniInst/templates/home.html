@@ -8,36 +8,6 @@
 <script defer src="{% static 'comments/modal_comments.js' %}"></script>
 <div class="app-container flex min-h-screen bg-gray-100">
 
-    <!-- Sidebar -->
-    <aside class="sidebar w-64 flex-shrink-0 p-4 flex flex-col gap-6"
-           style="background-color: #000; color: #fff;">
-        <div class="logo text-2xl font-bold mb-4 text-gray-800">MiniInst</div>
-        <nav class="flex flex-col gap-2">
-            <a href="/" class="sidebar-link">🏠 Головна</a>
-            <a href="/search" class="sidebar-link">🔍 Пошук</a>
-            <a href="/stories/all_stories" class="sidebar-link">🎬 Історії</a>
-            <a href="#" class="sidebar-link">❤️ Сповіщення</a>
-            <a href="/posts/" class="sidebar-link">➕ Створити</a>
-            {% if request.user.is_authenticated %}
-            <a href="{% url 'profile' username=request.user.username %}" class="sidebar-link">👤 Профіль</a>
-            <a href="{% url 'posts:user_reposts' username=request.user.username %}" class="sidebar-link">🔁 Мої репости</a>
-            <a href="{% url 'posts:friends_reposts' %}" class="sidebar-link">👥 Репости друзів</a>
-            {% endif %}
-            <a href="{% url 'settings' %}" class="sidebar-link">⚙️ Налаштування</a>
-        </nav>
-
-        {% if request.user.is_authenticated %}
-        <div class="quick-actions mt-auto">
-            <a href="/direct/inbox/" class="chat-link flex items-center gap-3 p-3 rounded-lg bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:scale-105 transition-transform">
-                <div class="chat-icon w-10 h-10 flex items-center justify-center rounded-lg bg-white text-indigo-600">
-                    💬
-                </div>
-                <span>Повідомлення</span>
-            </a>
-        </div>
-        {% endif %}
-    </aside>
-
     <!-- Stories Column -->
     <aside class="stories-column w-56 bg-white shadow-md border-r">
         <div class="p-4 font-semibold text-gray-700 border-b">Історії</div>

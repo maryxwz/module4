@@ -66,15 +66,24 @@ def post_create(request):
 
 
 def post_update(request, pk):
-    post = get_object_or_404(Post, pk=pk, author=request.user)
+    post = get_object_or_404(Post, pk=pk)
+
     if request.method == "POST":
         form = PostForm(request.POST, request.FILES, instance=post)
         if form.is_valid():
             form.save()
-            return redirect("post_detail", pk=pk)
+            return redirect("posts:post_detail", pk=pk)
     else:
         form = PostForm(instance=post)
-    return render(request, "posts/post_form.html", {"form": form})
+
+    return render(
+        request,
+        "posts/post_form.html",
+        {
+            "form": form,
+            "user": request.user,
+        }
+    )
 
 
 def post_archive(request, pk):

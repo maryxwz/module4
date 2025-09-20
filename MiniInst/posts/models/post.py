@@ -14,7 +14,7 @@ class PostQuerySet(models.QuerySet):
 
 class Post(models.Model):
     author = models.ForeignKey(to="users.CustomUser", on_delete=models.CASCADE, related_name="posts")
-    title = models.CharField(max_length=255, default="Без названия")
+    title = models.CharField(max_length=255, default="Без назви")
     image = models.ImageField(upload_to="posts/")
     caption = models.TextField(blank=True)
     is_archived = models.BooleanField(default=False)
