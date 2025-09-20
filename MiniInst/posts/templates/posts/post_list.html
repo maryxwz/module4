@@ -1,89 +1,55 @@
 {% extends 'base.html' %}
 
-{% block title %}Репости користувача{% endblock %}
+{% block title %}Мої пости{% endblock %}
 
 {% block content %}
 {% load static %}
-<link rel="stylesheet" href="{% static 'comments/modal_comments.css' %}">
-<script defer src="{% static 'comments/modal_comments.js' %}"></script>
 
-<h1>Репости {{ request.user.username }}</h1>
-<p><a href="{% url 'post_create' %}">➕ Створити новий пост</a></p>
-<hr>
-
-{% for repost in reposts %}
-<div style="margin-bottom: 20px; border-bottom:1px solid #ddd; padding-bottom:10px;">
-    <p><strong>{{ repost.post.author.username }}</strong> — {{ repost.post.created_at|date:"Y-m-d H:i" }}</p>
-
-    {% if repost.post.image %}
-      <img src="{{ repost.post.image.url }}" width="300" alt="">
-    {% endif %}
-
-    <p>{{ repost.post.caption }}</p>
-
-    <p>
-      <a href="{% url 'post_detail' repost.post.pk %}">Детальніше</a> |
-      {% if repost.post.author == request.user %}
-        <a href="{% url 'post_update' repost.post.pk %}">Редагувати</a> |
-      {% endif %}
-      <a href="#" data-open-comments data-post-id="{{ repost.post.id }}">
-          Коментарі ({{ repost.post.comment_count }})
-      </a> |
-      <a href="#"
-         class="repost-btn"
-         data-post-id="{{ repost.post.id }}"
-         data-url="{% url 'posts:repost_post' repost.post.id %}">
-         Репост ({{ repost.post.repost_count }})
-      </a>
-    </p>
-</div>
-{% empty %}
-<p>Репостів поки немає 👀</p>
-{% endfor %}
-
-<script>
-document.addEventListener("DOMContentLoaded", function() {
-    document.querySelectorAll(".repost-btn").forEach(button => {
-        button.addEventListener("click", function(e) {
-            e.preventDefault();
-            const url = this.dataset.url;
-            const span = this.querySelector("span");
-            const currentCount = parseInt(span.textContent.match(/\d+/)) || 0;
-
-            fetch(url, {
-                method: "POST",
-                headers: {
-                    "X-CSRFToken": getCookie("csrftoken"),
-                    "X-Requested-With": "XMLHttpRequest"
-                },
-                credentials: "same-origin"
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === "reposted") {
-                    span.textContent = `Репост (${currentCount + 1})`;
-                } else if (data.status === "unreposted") {
-                    span.textContent = `Репост (${currentCount - 1})`;
-                }
-            });
-        });
-    });
-});
-
-// Функція для отримання CSRF токена
-function getCookie(name) {
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== "") {
-        const cookies = document.cookie.split(";");
-        for (let cookie of cookies) {
-            cookie = cookie.trim();
-            if (cookie.startsWith(name + "=")) {
-                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                break;
-            }
-        }
+<style>
+    .empty-state {
+        max-width: 500px;
+        margin: 60px auto;
+        padding: 30px;
+        background: #fff;
+        border-radius: 12px;
+        text-align: center;
+        box-shadow: 0 4px 14px rgba(0,0,0,0.1);
     }
-    return cookieValue;
-}
-</script>
+
+    .empty-state h2 {
+        margin-bottom: 10px;
+        color: #333;
+    }
+
+    .empty-state p {
+        margin-bottom: 20px;
+        color: #666;
+    }
+
+    .create-post-link {
+        display: inline-block;
+        padding: 12px 24px;
+        background: #28a745;
+        color: white;
+        border-radius: 8px;
+        text-decoration: none;
+        transition: 0.3s;
+        font-weight: bold;
+        font-size: 16px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+    }
+
+    .create-post-link:hover {
+        background: #218838;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 14px rgba(0,0,0,0.2);
+    }
+</style>
+
+<div class="empty-state">
+    <p>Натисни кнопку нижче, щоб створити новий пост 🚀</p>
+    <a href="{% url 'posts:post_create' %}" class="create-post-link">
+        ➕ Створити новий пост
+    </a>
+</div>
 {% endblock %}

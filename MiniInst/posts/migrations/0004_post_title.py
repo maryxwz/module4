@@ -13,6 +13,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='post',
             name='title',
-            field=models.CharField(default='Без названия', max_length=255),
+            field=models.CharField(default='Без назви', max_length=255),
         ),
     ]
