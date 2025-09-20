@@ -1,0 +1,39 @@
+{% if entries %}
+  {% for fr in entries %}
+    <div class="follow-item">
+      <div class="avatar">
+        {% if fr.from_user.avatar %}
+          <img src="{{ fr.from_user.avatar.url }}" alt="{{ fr.from_user.username }}">
+        {% else %}
+          <div class="default-avatar"></div>
+        {% endif %}
+      </div>
+      <div class="names" style="flex:1;">
+        <a class="username" href="{% url 'users:profile' fr.from_user.username %}">@{{ fr.from_user.username }}</a>
+        {% if fr.from_user.first_name or fr.from_user.last_name %}
+          <span class="name">{{ fr.from_user.first_name }} {{ fr.from_user.last_name }}</span>
+        {% endif %}
+      </div>
+      <div class="actions" style="display:flex; gap:8px;">
+        <form method="post"
+              action="{% url 'users:follow_request_accept' fr.pk %}"
+              hx-post="{% url 'users:follow_request_accept' fr.pk %}"
+              hx-target="#requestsPanelBody"
+              hx-swap="innerHTML">
+          {% csrf_token %}
+          <button type="submit" class="btn-follow" style="min-width:100px;">Підтвердити</button>
+        </form>
+        <form method="post"
+              action="{% url 'users:follow_request_reject' fr.pk %}"
+              hx-post="{% url 'users:follow_request_reject' fr.pk %}"
+              hx-target="#requestsPanelBody"
+              hx-swap="innerHTML">
+          {% csrf_token %}
+          <button type="submit" class="btn-unfollow" style="min-width:100px;">Відхилити</button>
+        </form>
+      </div>
+    </div>
+  {% endfor %}
+{% else %}
+  <div class="loader">Немає вхідних запитів</div>
+{% endif %}
