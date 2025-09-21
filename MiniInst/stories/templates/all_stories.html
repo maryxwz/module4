@@ -153,15 +153,15 @@
         .main-content {
             padding: 16px;
         }
-        
+
         .stories-grid {
             grid-template-columns: 1fr;
         }
-        
+
         .header-section {
             padding: 20px;
         }
-        
+
         .add-story-button {
             bottom: 16px;
             right: 16px;
@@ -173,13 +173,11 @@
     <div class="header-section">
         <h1>Мої історії</h1>
         <p>Керуйте своїми публікаціями та спогадами</p>
-    </div>
-
-    <div class="stories-section">
+    </div><div class="stories-section">
         <div class="section-header">
             <h2 class="section-title">📍 Активні історії</h2>
         </div>
-        
+
         {% if active_stories %}
             <div class="stories-grid">
                 {% for story in active_stories %}
@@ -205,7 +203,7 @@
         <div class="section-header">
             <h2 class="section-title">📁 Архівовані історії</h2>
         </div>
-        
+
         {% if archived_stories %}
             <div class="stories-grid">
                 {% for story in archived_stories %}

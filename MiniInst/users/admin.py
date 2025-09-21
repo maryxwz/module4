@@ -39,6 +39,16 @@ class CustomUserAdmin(admin.ModelAdmin):
         "email",
     )
 
+    def has_delete_permission(self, request, obj=None):
+        if obj and (obj.is_staff or obj.is_superuser):
+            return False
+        return super().has_delete_permission(request, obj)
+
+    def delete_queryset(self, request, queryset):
+
+        only_users_queryset = queryset.exclude(is_staff=True, is_superuser=True)
+        return super().delete_queryset(request, only_users_queryset)
+
 
 @admin.register(Follow)
 class FollowAdmin(admin.ModelAdmin):

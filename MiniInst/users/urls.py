@@ -1,6 +1,10 @@
 from django.urls import path
 from . import views
 from .views import CustomLoginView
+from . views import register_view, profile_view, CustomLoginView
+from django.contrib.auth import views as auth_views
+from reels.views import all_reels_by_user
+from . import views
 
 app_name = "users"
 
@@ -20,4 +24,5 @@ urlpatterns = [
     path("following/<str:username>", views.following_list_view, name="following_list"),
     path("settings", views.account_settings_view, name="settings"),
     path("login/", CustomLoginView.as_view(template_name="registration/login.html"), name="login"),
+    path('reels/my/', all_reels_by_user, name='all_only_user_reels'),
 ]

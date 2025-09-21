@@ -67,13 +67,7 @@
                                 <span class="text-gray-500 text-sm">{{ post.created_at|date:"d M Y H:i" }}</span>
                             </div>
                         </div>
-                        <button class="p-2 rounded-full hover:bg-gray-100">
-                            <svg viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5">
-                                <circle cx="12" cy="12" r="2"/>
-                                <circle cx="19" cy="12" r="2"/>
-                                <circle cx="5" cy="12" r="2"/>
-                            </svg>
-                        </button>
+
                     </div>
                       {% if post.image %}
                         <a href="{% url 'posts:post_detail' post.pk %}">

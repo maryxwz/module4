@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+
+    {% block title %} Delete story {% endblock title %}
+
+{% block content %}
+
+ <h2>Видалити історію</h2>
+
+  {% if story.author != user %}
+    <p style="color:red;">Ви не маєте права видаляти цю історію.</p>
+  {% elif story.is_archived %}
+    <p style="color:red;">Ця історія заархівована і не може бути видалена.</p>
+  {% else %}
+    <p>Ви впевнені, що хочете видалити цю історію?</p>
+    <form method="post">
+      {% csrf_token %}
+      <button type="submit">Так, видалити</button>
+      <a href="{% url 'all_stories' %}">Скасувати</a>
+    </form>
+  {% endif %}
+
+{% endblock content %}

@@ -19,7 +19,8 @@
             <a href="{% url 'users:profile' username=request.user.username %}">👤 Профіль</a>
             <a href="{% url 'posts:user_reposts' username=request.user.username %}" class="sidebar-link">🔁 Мої репости</a>
             <a href="{% url 'posts:friends_reposts' %}" class="sidebar-link">👥 Репости друзів</a>
-            <a href="{% url 'settings' %}">⚙️Налаштування</a>
+            <a href="{% url 'settings' %}" class="sidebar-link">⚙️Налаштування</a>
+            <a href="{% url 'all_reels' %}" class="sidebar-link">🎥Reels</a>
         </nav>
     </aside>
 
@@ -27,10 +28,6 @@
         <main>
             {% block content %}{% endblock %}
         </main>
-
-        <!-- <footer>
-            <p>© 2025 MiniInst</p>
-        </footer> -->
     </div>
 </body>
 </html>
