@@ -6,6 +6,7 @@ from django.utils.html import escape
 from django.db.models import Prefetch
 
 from .models.comment import Comment
+from .profanity import contains_profanity  # ← ДОБАВЛЕНО
 
 Post = apps.get_model('posts', 'Post')
 
@@ -76,6 +77,8 @@ def api_comments(request):
         text = (request.POST.get("text") or "").strip()
         if not post_id or not text:
             return JsonResponse({"ok": False, "error": "bad_params"}, status=400)
+        if contains_profanity(text):
+            return JsonResponse({"ok": False, "error": "profanity"}, status=422)
         post = get_object_or_404(Post, pk=post_id)
         c = Comment.objects.create(author=request.user, post=post, text=text)
         return JsonResponse({"ok": True, "comment": _serialize_comment(c, request)})
@@ -87,6 +90,8 @@ def api_comments(request):
         text = (request.POST.get("text") or "").strip()
         if not parent_id or not text:
             return JsonResponse({"ok": False, "error": "bad_params"}, status=400)
+        if contains_profanity(text):
+            return JsonResponse({"ok": False, "error": "profanity"}, status=422)
         parent = get_object_or_404(Comment, pk=parent_id, is_deleted=False)
         c = Comment.objects.create(author=request.user, post=parent.post, parent=parent, text=text)
         replies_qs = parent.replies.select_related("author").filter(is_deleted=False).order_by("created_at")
@@ -119,6 +124,8 @@ def api_comments(request):
             return JsonResponse({"ok": False, "error": "forbidden"}, status=403)
         if not text:
             return JsonResponse({"ok": False, "error": "empty"}, status=400)
+        if contains_profanity(text):
+            return JsonResponse({"ok": False, "error": "profanity"}, status=422)
         c.text = text
         c.save(update_fields=["text"])
         return JsonResponse({"ok": True, "comment": _serialize_comment(c, request)})
@@ -135,4 +142,5 @@ def api_comments(request):
         return JsonResponse({"ok": True, "id": c.id})
 
     return JsonResponse({"ok": False, "error": "unknown_action"}, status=400)
+
 

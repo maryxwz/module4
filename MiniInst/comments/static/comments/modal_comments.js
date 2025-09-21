@@ -24,10 +24,18 @@
     }
   }
 
+  function showToast(modal, msg, ms=3000){
+    const el = modal.querySelector(".cmodal__toast");
+    if (!el) return;
+    el.textContent = msg;
+    el.classList.add("is-show");
+    clearTimeout(el._t);
+    el._t = setTimeout(() => el.classList.remove("is-show"), ms);
+  }
+
   function escapeHtml(str){
     return String(str ?? "").replace(/[&<>"']/g, s => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[s]));
   }
-
 
   function renderList(modal, data) {
     const list = document.createElement("div");
@@ -91,7 +99,6 @@
     `;
   }
 
-
   function ensureModal(){
     let modal = document.querySelector(".cmodal");
     if (modal) return modal;
@@ -104,6 +111,7 @@
           <button class="cmodal__close" data-close-modal type="button">✕</button>
         </div>
         <div class="cmodal__body">
+          <div class="cmodal__toast" role="alert" aria-live="assertive"></div>
           <form class="cmodal__form">
             <textarea rows="3" placeholder="Напишіть коментар..."></textarea>
             <div class="cmodal__actions">
@@ -116,7 +124,6 @@
     document.body.appendChild(modal);
     return modal;
   }
-
 
   document.addEventListener("click", async (e) => {
     const btn = e.target.closest("[data-open-comments]");
@@ -188,17 +195,18 @@
       const cid = item.dataset.cid;
       const val = item.querySelector(".cmtitem__edit").value;
       api({method:"POST", body:{action:"edit", id: cid, text: val}}).then(res => {
+        const modal = document.querySelector(".cmodal");
         if (res.ok) {
-          const modal = document.querySelector(".cmodal");
           api({method:"GET", query:{post_id: modal.dataset.postId}}).then(data => renderList(modal, data));
         } else if (res.error === "forbidden") {
-          alert("Можна редагувати лише власний коментар.");
+          showToast(modal, "Можна редагувати лише власний коментар.");
+        } else if (res.error === "profanity") {
+          showToast(modal, "Коментар містить заборонені слова. Будь ласка, відредагуйте текст.");
         }
       });
       e.preventDefault();
       return;
     }
-
 
     const showReply = e.target.closest("[data-show-reply]");
     if (showReply) {
@@ -219,7 +227,6 @@
       e.preventDefault();
       return;
     }
-
 
     const toggle = e.target.closest("[data-toggle-replies]");
     if (toggle) {
@@ -257,7 +264,6 @@
     }
   });
 
-
   document.addEventListener("submit", (e) => {
     const form = e.target.closest(".cmodal__form");
     if (form) {
@@ -265,32 +271,39 @@
       const modal = document.querySelector(".cmodal");
       const postId = modal.dataset.postId;
       const text = form.querySelector("textarea").value.trim();
-      if (!text) return;
+      if (!text) {
+        showToast(modal, "Коментар не може бути порожнім");
+        return;
+      }
       api({method:"POST", body:{action:"create", post_id: postId, text}}).then(res => {
         if (res.ok) {
           form.querySelector("textarea").value = "";
           api({method:"GET", query:{post_id: postId}}).then(data => renderList(modal, data));
         } else if (res.error === "auth") {
-          alert("Щоб залишити коментар — увійдіть.");
+          showToast(modal, "Щоб залишити коментар — увійдіть.");
+        } else if (res.error === "profanity") {
+          showToast(modal, "Коментар містить заборонені слова. Будь ласка, відредагуйте текст.");
         }
       });
     }
   });
 
-
   document.addEventListener("submit", (e) => {
     const rform = e.target.closest(".reply-form");
     if (rform) {
       e.preventDefault();
+      const modal = document.querySelector(".cmodal");
       const parentId = rform.dataset.replyParent;
       const text = rform.querySelector("textarea").value.trim();
-      if (!text) return;
+      if (!text) {
+        showToast(modal, "Відповідь не може бути порожня");
+        return;
+      }
       api({method:"POST", body:{action:"reply", parent_id: parentId, text}}).then(res => {
         if (res.ok) {
           rform.querySelector("textarea").value = "";
           const wrap = document.querySelector(`.replies[data-parent-id="${parentId}"]`);
           const list = wrap.querySelector(".reply-list");
-
           if (list.hasAttribute("hidden")) wrap.querySelector("[data-toggle-replies]").click();
           list.innerHTML = res.replies.map(r => `
               <div class="cmtitem reply" data-cid="${r.id}">
@@ -306,11 +319,14 @@
               </div>
           `).join("");
         } else if (res.error === "auth") {
-          alert("Щоб відповісти — увійдіть.");
+          showToast(modal, "Щоб відповісти — увійдіть.");
+        } else if (res.error === "profanity") {
+          showToast(modal, "Відповідь містить заборонені слова. Будь ласка, відредагуйте текст.");
         }
       });
     }
   });
 })();
+
 
 
