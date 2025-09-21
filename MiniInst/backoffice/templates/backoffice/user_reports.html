@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+{% block title %}Жалоби{% endblock %}
+{% block content %}
+
+<table>
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Author</th>
+            <th>Description</th>
+            <th>Reported User</th>
+            <th>Reports Count</th>
+            <th>Attachment</th>
+            <th>Status</th>
+            <th>Created At</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for report in reports %}
+        <tr>
+            <td>{{ report.id }}</td>
+            <td>{{ report.author.username }}</td>
+            <td>{{ report.description|truncatechars:50 }}</td>
+            <td>
+                {% if report.reported_user %}
+                    <span class="{% if report.reported_user.is_active %}{% else %}blocked-user{% endif %}">
+                        {{ report.reported_user.username }}
+                    </span>
+                {% else %}
+                    —
+                {% endif %}
+            </td>
+            <td>
+                {% if report.reported_user %}
+                    <span class="report-count {% if report.reported_user_count > 5 %}high{% endif %}">
+                        {{ report.reported_user_count }}
+                    </span>
+                {% else %}
+                    —
+                {% endif %}
+            </td>
+            <td>
+                {% if report.content %}
+                    <a href="{{ report.content.url }}" target="_blank">View File</a>
+                {% else %}
+                    —
+                {% endif %}
+            </td>
+            <td class="{% if report.is_archived %}status-archived{% else %}status-active{% endif %}">
+                {% if report.is_archived %}Archived{% else %}Active{% endif %}
+            </td>
+            <td>{{ report.created_at|date:"Y-m-d H:i" }}</td>
+            <td>
+                {% if report.reported_user and report.reported_user_count > 5 and report.reported_user.is_active %}
+                    <form method="post" action="{% url 'block_user' report.reported_user.id %}" style="display: inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="block-btn" onclick="return confirm('Заблокировать пользователя {{ report.reported_user.username }}?')">
+                            Block User
+                        </button>
+                    </form>
+                {% elif report.reported_user and not report.reported_user.is_active %}
+                    <span class="blocked-user">Blocked</span>
+                {% else %}
+                    —
+                {% endif %}
+            </td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="9" style="text-align:center; padding:20px;">No reports found 😌</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            margin: 20px auto;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        th, td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #ddd;
+            text-align: left;
+        }
+        th {
+            background-color: #40739e;
+            color: white;
+        }
+        tr:hover {
+            background-color: #f1f2f6;
+        }
+        a {
+            color: #0984e3;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        .report-count {
+            font-weight: bold;
+            padding: 4px 8px;
+            border-radius: 4px;
+            background-color: #f1f2f6;
+        }
+        .report-count.high {
+            background-color: #ff6b6b;
+            color: white;
+        }
+        .block-btn {
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .block-btn:hover {
+            background-color: #c0392b;
+        }
+        .blocked-user {
+            color: #7f8c8d;
+            font-style: italic;
+        }
+    </style>
+{% endblock %}

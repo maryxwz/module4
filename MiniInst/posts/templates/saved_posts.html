@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block content %}
+  <h2>Збережені пости</h2>
+  {% if saved_posts %}
+    <ul>
+      {% for sp in saved_posts %}
+        <li>{{ sp.post.content }} (Автор: {{ sp.post.author.username }})</li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p>Немає збережених постів</p>
+  {% endif %}
+{% endblock %}

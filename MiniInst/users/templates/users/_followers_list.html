@@ -1,0 +1,27 @@
+{% if users %}
+  {% for u in users %}
+    <div class="follow-item">
+      <div class="avatar">
+        {% if u.avatar %}
+          <img src="{{ u.avatar.url }}" alt="{{ u.username }}">
+        {% else %}
+          <div class="default-avatar"></div>
+        {% endif %}
+      </div>
+      <div class="names">
+        <a href="{% url 'users:profile' u.username %}" class="username">@{{ u.username }}</a>
+        {% if u.first_name or u.last_name %}
+          <span class="name">{{ u.first_name }} {{ u.last_name }}</span>
+        {% endif %}
+      </div>
+    </div>
+  {% endfor %}
+{% else %}
+  <div class="loader">
+    {% if is_me %}
+      У вас немає підписників.
+    {% else %}
+      У цього користувача немає підписників.
+    {% endif %}
+  </div>
+{% endif %}

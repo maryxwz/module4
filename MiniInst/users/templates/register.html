@@ -1,9 +1,106 @@
-{% extends "base.html" %}
 {% block content %}
-  <h2>Register</h2>
-  <form method="post" enctype="multipart/form-data">
+<style>
+.register-container {
+    max-width: 400px;
+    margin: 50px auto;
+    padding: 25px;
+    background: #ffffff;
+    border-radius: 15px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+    font-family: "Segoe UI", sans-serif;
+}
+
+.register-container h2 {
+    text-align: center;
+    margin-bottom: 20px;
+    color: #333;
+    font-size: 24px;
+}
+
+.register-form p {
+    margin-bottom: 15px;
+}
+
+.register-form label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 6px;
+    color: #555;
+}
+
+.register-form input,
+.register-form select,
+.register-form textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    font-size: 14px;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.register-form input:focus,
+.register-form select:focus,
+.register-form textarea:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 6px rgba(0,123,255,0.4);
+    outline: none;
+}
+
+.btn-register {
+    width: 100%;
+    padding: 12px;
+    background: linear-gradient(135deg, #007bff, #00c6ff);
+    border: none;
+    border-radius: 12px;
+    color: white;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    margin-top: 10px;
+}
+
+.btn-register:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(0,123,255,0.4);
+}
+
+.btn-register:active {
+    transform: translateY(0);
+    box-shadow: none;
+}
+
+.login-redirect {
+    text-align: center;
+    margin-top: 15px;
+    font-size: 14px;
+    color: #555;
+}
+
+.login-redirect a {
+    color: #007bff;
+    font-weight: 600;
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.login-redirect a:hover {
+    color: #0056b3;
+    text-decoration: underline;
+}
+</style>
+
+<div class="register-container">
+  <h2>Реєстрація</h2>
+  <form method="post" enctype="multipart/form-data" class="register-form">
     {% csrf_token %}
     {{ form.as_p }}
-    <button type="submit">Register</button>
+    <button type="submit" class="btn-register">Зареєструватись</button>
   </form>
+
+  <div class="login-redirect">
+    Вже маєте акаунт? <a href="{% url 'login' %}">Увійдіть</a>
+  </div>
+</div>
 {% endblock %}

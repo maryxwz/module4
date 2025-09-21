@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block title %}Репости друзів{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto p-6">
+    <h2 class="text-2xl font-bold mb-6">👥 Репости друзів</h2>
+
+    {% if reposts %}
+        {% for repost in reposts %}
+            <article class="bg-white shadow-md rounded-xl mb-6 overflow-hidden">
+                <div class="p-4 border-b text-sm text-gray-600">
+                    <span class="font-semibold">{{ repost.user.username }}</span>
+                    зробив репост від
+                    <span class="font-semibold">{{ repost.post.author.username }}</span>
+                </div>
+                {% if repost.post.image %}
+                    <a href="{% url 'posts:post_detail' repost.post.pk %}">
+                        <img src="{{ repost.post.image.url }}" class="w-full object-cover max-h-96 hover:opacity-90 transition" />
+                    </a>
+                {% endif %}
+                <div class="p-4">
+                    <p class="text-gray-800">{{ repost.post.content }}</p>
+                </div>
+            </article>
+        {% endfor %}
+    {% else %}
+        <p class="text-gray-500">😢 У друзів поки що немає репостів.</p>
+    {% endif %}
+</div>
+{% endblock %}

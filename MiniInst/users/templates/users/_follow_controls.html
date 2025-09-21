@@ -1,0 +1,34 @@
+<div id="follow-controls">
+  {% if request.user.is_authenticated and request.user != profile_user %}
+    {% if pending_request %}
+      <button class="btn-follow-disabled" disabled>Запит відправлено</button>
+    {% else %}
+      {% if is_following %}
+        <form
+          method="post"
+          action="{% url 'unfollow_user' profile_user.username %}"
+          hx-post="{% url 'unfollow_user' profile_user.username %}"
+          hx-target="#follow-controls"
+          hx-swap="outerHTML"
+        >
+          {% csrf_token %}
+          <button type="submit" class="btn-follow-disabled" style="cursor:pointer;">Відписатися</button>
+        </form>
+      {% else %}
+        <form
+          method="post"
+          action="{% url 'follow_user' profile_user.username %}"
+          hx-post="{% url 'follow_user' profile_user.username %}"
+          hx-target="#follow-controls"
+          hx-swap="outerHTML"
+        >
+          {% csrf_token %}
+          <button type="submit" class="btn-follow-disabled" style="cursor:pointer;">Підписатися</button>
+        </form>
+      {% endif %}
+    {% endif %}
+  {% endif %}
+</div>
+
+<div id="stats-followers" hx-swap-oob="true"><strong>{{ followers_count }}</strong> підписників</div>
+<div id="stats-following" hx-swap-oob="true"><strong>{{ following_count }}</strong> підписок</div>

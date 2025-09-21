@@ -31,24 +31,26 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
-    'daphne', # for ASGI support (it must be installed first)
+    # third pary
+    "daphne",  # for ASGI support (it must be installed first)
+    "channels",
     # django
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
+    "django.contrib.admin",
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.messages",
+    "django.contrib.staticfiles",
     # custom
-    'users.apps.UsersConfig',
-    'posts.apps.PostsConfig',
-    'comments.apps.CommentsConfig',
-    'stories.apps.StoriesConfig',
-    'direct.apps.DirectConfig',
-    'recommendations.apps.RecommendationsConfig',
-    'search.apps.SearchConfig',
-    # 3rd party
-    'channels',
+    "users.apps.UsersConfig",
+    "posts.apps.PostsConfig",
+    "comments.apps.CommentsConfig",
+    "stories.apps.StoriesConfig",
+    "direct.apps.DirectConfig",
+    "recommendations.apps.RecommendationsConfig",
+    "search.apps.SearchConfig",
+    "backoffice.apps.BackofficeConfig",
+    "reels.apps.ReelsConfig",
 ]
 
 MIDDLEWARE = [
@@ -67,7 +69,7 @@ ROOT_URLCONF = 'MiniInst.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR/ 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -138,7 +140,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = 'static/'
-STATIC_ROOT = BASE_DIR / 'staticfiles' 
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [
     BASE_DIR / 'static',
 ]
@@ -152,9 +154,13 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 AUTH_USER_MODEL = 'users.CustomUser'
 LOGIN_REDIRECT_URL = 'profile'
-LOGOUT_REDIRECT_URL = 'login'
+LOGOUT_REDIRECT_URL = '/'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
 TEMPLATES[0]['DIRS'] = [BASE_DIR / 'templates']
+
+
+SCHEDULER_AUTOSTART = True
+TIME_ZONE = 'Europe/Kiev'

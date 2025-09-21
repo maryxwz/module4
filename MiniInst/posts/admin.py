@@ -16,16 +16,13 @@ class PostAdmin(admin.ModelAdmin):
         "author",
     )
     list_filter = (
-        "id",
         "author",
         "is_archived",
         "created_at",
     )
     search_fields = (
-        "id",
-        "author",
         "caption",
-        "is_archived",
+        "author__username",
     )
 
 
@@ -34,22 +31,28 @@ class LikeAdmin(admin.ModelAdmin):
     list_display = (
         "id",
         "user",
-        "post",
+        "related_object",
         "created_at",
     )
     list_display_links = (
         "id",
         "user",
-        "post",
+        "related_object",
     )
     list_filter = (
-        "id",
         "user",
-        "post",
         "created_at",
     )
     search_fields = (
-        "id",
-        "user",
-        "post",
+        "user__username",
     )
+
+    def related_object(self, obj):
+        """Показує, що саме лайкнули"""
+        if hasattr(obj.content_object, "title"):
+            return f"Post: {obj.content_object.title}"
+        elif hasattr(obj.content_object, "bio"):
+            return f"Reels: {obj.content_object.author.username} | {obj.content_object.created_at}"
+        return str(obj.content_object)
+
+    related_object.short_description = "Лайк до"

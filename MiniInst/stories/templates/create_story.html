@@ -1,8 +1,8 @@
-<!DOCTYPE html>
-<html lang="uk">
-<head>
-    <meta charset="UTF-8">
-    <title>Додати історію</title>
+{% extends 'base.html' %}
+
+{% block title %} Додати історію {% endblock title %}
+
+{% block content %}
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -89,7 +89,7 @@
         }
     </style>
 </head>
-<body>
+
 
 <h2>Додати нову історію</h2>
 
@@ -99,7 +99,6 @@
     <button type="submit">Опублікувати</button>
 </form>
 
+{% endblock content %}
 
 
-</body>
-</html>
