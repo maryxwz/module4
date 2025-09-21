@@ -30,7 +30,14 @@
             <div class="profile-header-top">
                 <h2>{{ profile_user.username }}</h2>
                 <div class="profile-actions">
-                    {% if profile_user != request.user %}
+                    {% if profile_user == request.user %}
+                        <a href="{% url 'all_only_user_reels' %}" class="btn-reels">
+                            <svg class="w-5 h-5 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v8a2 2 0 01-2 2h-2a2 2 0 01-2-2V6z"/>
+                            </svg>
+                            Мої Reels
+                        </a>
+                    {% else %}
                         <div class="follow-actions">
                             <button class="btn-follow-disabled">Підписатися</button>
                         </div>

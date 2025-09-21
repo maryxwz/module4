@@ -93,6 +93,13 @@
     transform: scale(1.2);
 }
 
+.delete-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: rgba(255,0,0,0.7) !important;
+    z-index: 10;
+}
 
 .reel-info {
     position: absolute;
@@ -133,6 +140,32 @@
     padding: 5px;
 }
 
+.delete-confirm-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.7);
+    z-index: 100;
+    justify-content: center;
+    align-items: center;
+}
+
+.delete-confirm-modal.active {
+    display: flex;
+}
+
+.delete-confirm-content {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    max-width: 400px;
+    width: 100%;
+    text-align: center;
+}
+
 </style>
 
 <div class="reels-container">
@@ -142,6 +175,12 @@
         <video class="reel-video" muted playsinline loop>
             <source src="{{ reel.content.url }}" type="video/mp4">
         </video>
+        {% endif %}
+
+        {% if reel.author == request.user %}
+        <button class="delete-btn" data-id="{{ reel.id }}">
+            🗑️
+        </button>
         {% endif %}
 
         <div class="reel-actions">
@@ -167,6 +206,11 @@
             <p>{{ reel.bio }}</p>
         </div>
     </div>
+    {% empty %}
+    <div class="text-center">
+        <h4>У вас ще немає рілсів</h4>
+        <p>Створіть свій перший рілс!</p>
+    </div>
     {% endfor %}
 </div>
 
@@ -181,6 +225,21 @@
     </form>
 </div>
 
+<div class="delete-confirm-modal" id="deleteConfirmModal">
+    <div class="delete-confirm-content">
+        <h5>Видалити рілс?</h5>
+        <p>Цю дію не можна скасувати</p>
+        <form id="deleteReelForm" method="post">
+            {% csrf_token %}
+            <input type="hidden" id="reelToDelete" name="reel_id" value="">
+            <div class="d-flex justify-content-center gap-2 mt-3">
+                <button type="button" class="btn btn-secondary" id="cancelDelete">Скасувати</button>
+                <button type="submit" class="btn btn-danger">Видалити</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <script src="https://cdn.plyr.io/3.7.8/plyr.polyfilled.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', () => {
@@ -189,10 +248,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const commentsList = document.getElementById('commentsList');
     const commentForm = document.getElementById('commentForm');
     const currentReelIdInput = document.getElementById('currentReelId');
+    const deleteConfirmModal = document.getElementById('deleteConfirmModal');
+    const deleteReelForm = document.getElementById('deleteReelForm');
+    const reelToDeleteInput = document.getElementById('reelToDelete');
+    const cancelDeleteBtn = document.getElementById('cancelDelete');
     let currentReelId = null;
     const commentsCache = new Map();
 
-    // Завантажити стан лайків з локального сховища
     function loadLikeStates() {
         document.querySelectorAll('.like-btn').forEach(btn => {
             const reelId = btn.dataset.id;
@@ -205,7 +267,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Завантажити коментарі з локального сховища
     function loadCachedComments() {
         document.querySelectorAll('.reel-card').forEach(card => {
             const reelId = card.dataset.id;
@@ -216,7 +277,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Зберегти коментарі в локальне сховище
     function saveCommentsToCache(reelId, comments) {
         commentsCache.set(reelId, comments);
         localStorage.setItem(`reel_${reelId}_comments`, JSON.stringify(comments));
@@ -228,7 +288,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Завантажити початковий стан
     loadLikeStates();
     loadCachedComments();
 
@@ -251,7 +310,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
             commentsList.innerHTML = '';
 
-            // Спочатку показуємо кешовані коментарі
             if (commentsCache.has(reelId)) {
                 const cachedComments = commentsCache.get(reelId);
                 cachedComments.forEach(c => {
@@ -261,8 +319,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     commentsList.appendChild(div);
                 });
             }
-
-            // Потім завантажуємо актуальні з сервера
             fetch(`/reel/${reelId}/`)
                 .then(res => res.json())
                 .then(data => {
@@ -284,7 +340,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     saveCommentsToCache(reelId, commentElements);
                     card.querySelector('.like-count').innerText = data.likes_count;
 
-                    // Оновити стан лайка
                     const likeBtn = card.querySelector('.like-btn');
                     if (data.user_liked) {
                         likeBtn.classList.add('liked');
@@ -295,6 +350,47 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 });
         });
+    });
+
+    document.querySelectorAll('.delete-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const reelId = btn.dataset.id;
+            reelToDeleteInput.value = reelId;
+            deleteConfirmModal.classList.add('active');
+        });
+    });
+
+    cancelDeleteBtn.addEventListener('click', () => {
+        deleteConfirmModal.classList.remove('active');
+    });
+
+    deleteReelForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const reelId = reelToDeleteInput.value;
+        const formData = new FormData(deleteReelForm);
+
+        try {
+            const response = await fetch(`/reels/delete/${reelId}/`, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+
+            if (response.ok) {
+                document.querySelector(`.reel-card[data-id="${reelId}"]`).remove();
+                deleteConfirmModal.classList.remove('active');
+
+                localStorage.removeItem(`reel_${reelId}_comments`);
+                localStorage.removeItem(`reel_${reelId}_liked`);
+            } else {
+                alert('Помилка при видаленні рілсу');
+            }
+        } catch (error) {
+            console.error('Помилка:', error);
+            alert('Помилка при видаленні рілсу');
+        }
     });
 
     commentForm.addEventListener('submit', async e => {
@@ -318,7 +414,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 commentsList.prepend(div);
 
-                // Оновити кеш коментарів
                 if (!commentsCache.has(currentReelId)) {
                     commentsCache.set(currentReelId, []);
                 }
@@ -332,7 +427,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 commentsCache.get(currentReelId).unshift(newComment);
                 saveCommentsToCache(currentReelId, commentsCache.get(currentReelId));
 
-                // Оновити лічильник коментарів
+
                 document.querySelector(`.reel-card[data-id="${currentReelId}"] .comment-count`).textContent = data.comment_count;
 
                 commentForm.reset();
