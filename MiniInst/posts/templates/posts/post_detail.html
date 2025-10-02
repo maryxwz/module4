@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <title>Пост {{ post.id }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f6f9;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+
+        .post-container {
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            text-align: center; /* центрування всього контенту */
+        }
+
+        .post-meta {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 15px;
+        }
+
+        .post-image {
+            display: block;
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            margin: 10px auto 20px; /* центрування картинки */
+        }
+
+        .post-caption {
+            font-size: 16px;
+            color: #444;
+            margin-bottom: 20px;
+        }
+
+        .post-actions {
+            margin-top: 20px;
+        }
+
+        .post-actions a {
+            text-decoration: none;
+            margin: 0 10px;
+            padding: 8px 14px;
+            background: #007bff;
+            color: #fff;
+            border-radius: 6px;
+            transition: 0.3s;
+            display: inline-block;
+        }
+
+        .post-actions a:hover {
+            background: #0056b3;
+        }
+
+        .post-actions a:first-child {
+            background: #6c757d;
+        }
+
+        .post-actions a:first-child:hover {
+            background: #495057;
+        }
+    </style>
+</head>
+<body>
+    <h1>Пост №{{ post.id }}</h1>
+
+    <div class="post-container">
+        <p class="post-meta">
+            <strong>{{ post.author.username }}</strong> — {{ post.created_at|date:"Y-m-d H:i" }}
+        </p>
+
+        {% if post.image %}
+          <img src="{{ post.image.url }}" alt="Зображення поста" class="post-image">
+        {% endif %}
+
+        <p class="post-caption">{{ post.caption }}</p>
+
+        <div class="post-actions">
+            <a href="/">⬅ Назад до всіх постів</a>
+            <a href="{% url 'posts:post_update' post.pk %}">✏ Редагувати</a>
+        </div>
+    </div>
+</body>
+</html>

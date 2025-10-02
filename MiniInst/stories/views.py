@@ -1,0 +1,73 @@
+from datetime import timezone, datetime
+
+from django.contrib.auth.decorators import login_required
+from django.core.exceptions import ValidationError, PermissionDenied
+from django.shortcuts import render, redirect, get_object_or_404
+from django.utils import timezone
+from .forms import StoriesForms
+from .models.story import Story
+
+
+def archive_expired_stories():
+    Story.objects.filter(expires_at__lt=timezone.now(),is_archived=False).update(is_archived=True)
+
+
+@login_required
+def add_story(request):
+    if request.method == 'POST':
+        form = StoriesForms(request.POST, request.FILES)
+        if form.is_valid():
+            story = form.save(commit=False)
+            story.author = request.user
+            story.save()
+            return redirect('all_stories')
+    else:
+        form = StoriesForms()
+    return render(request, 'create_story.html', {'form': form})
+
+
+@login_required
+def all_stories(request):
+    archive_expired_stories()
+
+    active_stories = Story.objects.filter(
+        author=request.user,
+        is_archived=False
+    ).order_by('-created_at')
+
+    archived_stories = Story.objects.filter(
+        author=request.user,
+        is_archived=True
+    ).order_by('-created_at')
+
+    return render(request,
+                  'all_stories.html',
+                  {'active_stories': active_stories,
+                   'archived_stories': archived_stories})
+
+
+@login_required
+def view_story(request, id):
+    story = get_object_or_404(Story, id=id)
+
+    if not story.is_active():
+        story.is_archived = True
+        story.save()
+        return redirect('/')
+    else:
+        return render(request, 'current_story.html', {'story': story})
+
+@login_required
+def delete_story(request, int_pk):
+    story = get_object_or_404(Story, pk=int_pk)
+
+    if story.author != request.user or story.is_archived:
+        raise PermissionDenied("You can't delete this story, you are not author or story is archived.")
+
+    if request.method == 'POST':
+        story.delete()
+        return redirect('all_stories')
+
+    return render(request, 'delete_story.html', {'story': story})
+
+

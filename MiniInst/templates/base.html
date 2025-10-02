@@ -1,0 +1,33 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}MiniInst{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+    <aside class="sidebar">
+        <div class="logo">MiniInst</div>
+        <nav>
+            <a href="/">🏠 Головна</a>
+            <a href="/search">🔍 Пошук</a>
+            <a href="/stories/all_stories">🎬 Історії</a>
+            <a href="/direct/inbox/">💬 Чати</a>
+            <a href="/posts/create">➕ Створити</a>
+            <a href="{% url 'users:profile' username=request.user.username %}">👤 Профіль</a>
+            <a href="{% url 'posts:user_reposts' username=request.user.username %}" class="sidebar-link">🔁 Мої репости</a>
+            <a href="{% url 'posts:friends_reposts' %}" class="sidebar-link">👥 Репости друзів</a>
+            <a href="{% url 'settings' %}" class="sidebar-link">⚙️Налаштування</a>
+            <a href="{% url 'all_reels' %}" class="sidebar-link">🎥Reels</a>
+        </nav>
+    </aside>
+
+    <div class="content">
+        <main>
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+</body>
+</html>

@@ -1,0 +1,172 @@
+{% extends 'base.html' %}
+
+{% block title %} Додати історію {% endblock title %}
+
+{% block content %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css"/>
+
+<style>
+  .page-wrap { display:flex; flex-direction:column; align-items:center; padding: 32px 16px; }
+  form {
+    background:#fff; padding:24px; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,.05);
+    width:min(640px, 95vw);
+  }
+  label { font-weight:600; display:block; margin-bottom:6px; }
+  input[type="file"], button {
+    width:100%; padding:10px 14px; border:1px solid #ccc; border-radius:8px; box-sizing:border-box;
+  }
+  button.primary { background:#3897f0; color:#000; border:none; cursor:pointer; font-weight:600; transition:.2s; }
+  button.primary:hover { background:#2c82dd; }
+
+  #editor {
+    display:none; margin-top:20px; padding:16px; background:#fff; border:1px solid #ddd; border-radius:12px;
+    width:min(900px, 95vw);
+  }
+  #canvas { width:100%; max-height:75vh; border:1px solid #ccc; background:#f8f8f8; display:block; }
+
+  .toolbar { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+  .toolbar button {
+      flex: 1 1 120px;
+      padding: 10px 14px;
+      border-radius: 8px;
+      border: none;
+      background: #3fa9f5;
+      color: #000;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s ease;
+  }
+  .toolbar button:hover { background:#2196f3; }
+</style>
+
+<div class="page-wrap">
+  <h2>Додати нову історію</h2>
+
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+
+    <p>
+      <label for="id_content">Фото:</label>
+      {{ form.content }}
+      <button type="button" id="editBtn" style="display:none; margin-top:10px;" class="primary">
+        ✂️ Редагувати фото
+      </button>
+    </p>
+
+    <button type="submit" class="primary">Опублікувати</button>
+  </form>
+
+  <div id="editor">
+    <canvas id="canvas"></canvas>
+    <div class="toolbar">
+      <button type="button" data-filter="greyscale">Ч/Б</button>
+      <button type="button" data-filter="vintage">Vintage</button>
+      <button type="button" data-filter="lomo">Lomo</button>
+      <button type="button" id="cropDo">Обрізати</button>
+      <button type="button" id="resetBtn">Скинути</button>
+      <button type="button" id="saveBtn">Зберегти</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/camanjs/4.1.2/caman.full.min.js"></script>
+<script>
+  const fileInput = document.getElementById('id_content');
+  const editBtn   = document.getElementById('editBtn');
+  const editor    = document.getElementById('editor');
+  const canvas    = document.getElementById('canvas');
+  const ctx       = canvas.getContext('2d');
+  const cropDoBtn = document.getElementById('cropDo');
+  const resetBtn  = document.getElementById('resetBtn');
+  const saveBtn   = document.getElementById('saveBtn');
+
+  let img = new Image();
+  let cropper = null;
+
+  function refreshCamanBase() {
+    canvas.removeAttribute('data-caman-id');
+  }
+
+  fileInput.addEventListener('change', (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      img = new Image();
+      img.onload = () => {
+        canvas.width = img.width;
+        canvas.height = img.height;
+        ctx.drawImage(img, 0, 0);
+        refreshCamanBase();
+        editBtn.style.display = 'inline-block';
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+
+  editBtn.addEventListener('click', () => {
+    editor.style.display = 'block';
+    if (cropper) { try { cropper.destroy(); } catch(e){} cropper = null; }
+    cropper = new Cropper(canvas, {
+      viewMode: 2,
+      responsive: true,
+      background: false,
+      autoCrop: true,
+      autoCropArea: 1,
+      movable: true,
+      zoomable: true,
+      scalable: true,
+      ready() {
+        const c = cropper.getContainerData();
+        cropper.setCropBoxData({ left: 0, top: 0, width: c.width, height: c.height });
+      }
+    });
+  });
+
+  function applyFilter(type) {
+    Caman('#canvas', function () {
+      this.revert(false);
+      if (type === 'greyscale') this.greyscale();
+      if (type === 'vintage')   this.vintage();
+      if (type === 'lomo')      this.lomo();
+      this.render();
+    });
+  }
+
+  document.querySelectorAll('[data-filter]').forEach(btn => {
+    btn.addEventListener('click', () => applyFilter(btn.getAttribute('data-filter')));
+  });
+
+  cropDoBtn.addEventListener('click', () => {
+    if (!cropper) return;
+    const cropped = cropper.getCroppedCanvas({ imageSmoothingEnabled: true, imageSmoothingQuality: 'high' });
+    canvas.width = cropped.width;
+    canvas.height = cropped.height;
+    ctx.drawImage(cropped, 0, 0);
+    cropper.destroy();
+    cropper = null;
+    refreshCamanBase();
+  });
+
+  resetBtn.addEventListener('click', () => {
+    if (cropper) {
+      cropper.reset();
+    } else {
+      Caman('#canvas', function () { this.revert(true); this.render(); });
+    }
+  });
+
+  saveBtn.addEventListener('click', () => {
+    canvas.toBlob((blob) => {
+      const file = new File([blob], 'edited_story.png', { type: 'image/png' });
+      const dt = new DataTransfer();
+      dt.items.add(file);
+      fileInput.files = dt.files;
+      alert('Фото готове. Тепер натисни «Опублікувати».');
+    }, 'image/png');
+  });
+</script>
+{% endblock content %}
+

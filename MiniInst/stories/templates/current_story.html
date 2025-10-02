@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block title %}Історія - {{ story.author.username }}{% endblock %}
+
+{% block content %}
+<div class="flex flex-col items-center justify-center min-h-screen bg-gray-200 text-black">
+
+    <div class="flex items-center gap-3 mb-4">
+        {% if story.author.avatar %}
+            <img src="{{ story.author.avatar.url }}"
+                 alt="{{ story.author.username }}"
+                 class="w-12 h-12 rounded-full border-2 border-pink-500">
+        {% else %}
+            <div class="w-12 h-12 rounded-full bg-gray-700 flex items-center justify-center text-lg font-bold">
+                {{ story.author.username|first|upper }}
+            </div>
+        {% endif %}
+        <div>
+            <p class="font-semibold">{{ story.author.username }}</p>
+            <p class="text-sm text-gray-400">{{ story.created_at|date:"Y-m-d H:i" }}</p>
+        </div>
+    </div>
+
+    <div class="max-w-lg w-full bg-black rounded-2xl overflow-hidden shadow-lg">
+    {% if ".mp4" in story.content.url or ".webm" in story.content.url %}
+        <video src="{{ story.content.url }}" controls autoplay></video>
+    {% else %}
+        <img src="{{ story.content.url }}"
+         alt="Story content"
+         class="w-[600px] h-[600px] object-cover">
+    {% endif %}
+    </div>
+
+    <div class="mt-6">
+        <a href="/"
+           class="px-4 py-2 bg-pink-600 hover:bg-pink-700 rounded-lg shadow-md transition">
+            ← Назад
+        </a>
+    </div>
+</div>
+{% endblock %}

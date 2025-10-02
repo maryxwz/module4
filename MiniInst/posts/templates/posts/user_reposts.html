@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}Репости {{ profile_user.username }}{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto p-6">
+    <h2 class="text-2xl font-bold mb-6">🔁 Репости {{ profile_user.username }}</h2>
+
+    {% if reposts %}
+        {% for repost in reposts %}
+            <article class="bg-white shadow-md rounded-xl mb-6 overflow-hidden">
+                <div class="p-4 flex items-center gap-3 border-b">
+                    {% if repost.post.author.avatar %}
+                        <img src="{{ repost.post.author.avatar.url }}" class="w-10 h-10 rounded-full object-cover">
+                    {% else %}
+                        <div class="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">👤</div>
+                    {% endif %}
+                    <div>
+                        <p class="font-semibold">{{ repost.post.author.username }}</p>
+                        <span class="text-sm text-gray-500">{{ repost.created_at|date:"d M Y H:i" }}</span>
+                    </div>
+                </div>
+
+                {% if repost.post.image %}
+                    <a href="{% url 'posts:post_detail' repost.post.pk %}">
+                        <img src="{{ repost.post.image.url }}" class="w-full object-cover max-h-96 hover:opacity-90 transition" />
+                    </a>
+                {% endif %}
+
+                <div class="p-4">
+                    <p class="text-gray-800 mb-2">
+                        <span class="font-semibold">{{ repost.post.author.username }}</span>
+                        {{ repost.post.caption }}
+                    </p>
+                </div>
+            </article>
+        {% endfor %}
+    {% else %}
+        <p class="text-gray-500">😢 У {{ profile_user.username }} немає репостів друзів.</p>
+    {% endif %}
+</div>
+{% endblock %}
